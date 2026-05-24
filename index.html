@@ -405,67 +405,51 @@
     // 🎵 ВОСПРОИЗВЕДЕНИЕ (ПРЯМОЙ СТРИМИНГ)
     // ==========================================
     
-    // 🔥 Загрузка и воспроизведение трека
+    // 🔥 Загрузка и воспроизведение трека — ПРЯМАЯ ССЫЛКА!
     async function loadAndPlay(track, seekTime) {
       console.log('🎵 Loading track:', track.title);
-      console.log('📁 Track path:', track.url);
+      console.log('📁 Direct URL:', track.url);
       
-      setStatus('📥 Загрузка: ' + track.title, 'status-loading');
+      setStatus('🎶 Сейчас: ' + track.title, 'status-playing');
       
-      try {
-        // 🔥 Создаем URL для стриминга через Google Apps Script
-        var streamUrl = API_URL + '?stream=' + encodeURIComponent(track.url);
-        
-        console.log('🔗 Stream URL:', streamUrl);
-        
-        audio.src = streamUrl;
-        
-        if (seekTime > 0) {
-          audio.addEventListener('loadedmetadata', function seekHandler() {
-            audio.currentTime = seekTime;
-            audio.removeEventListener('loadedmetadata', seekHandler);
-          }, { once: true });
-        }
-        
-        audio.play().then(() => {
-          console.log('✅ Playing:', track.title);
-          setStatus('🎶 Сейчас: ' + track.title, 'status-playing');
-        }).catch(e => {
-          console.error('❌ Play error:', e);
-          setStatus('⚠️ Нажмите Play', 'status-error');
-        });
-        
-      } catch (e) {
-        console.error('❌ Load error:', e);
-        setStatus('❌ Ошибка: ' + e.message, 'status-error');
+      // 🔥 Используем ПРЯМУЮ ссылку без прокси!
+      audio.src = track.url;
+      
+      if (seekTime > 0) {
+        audio.addEventListener('loadedmetadata', function seekHandler() {
+          audio.currentTime = seekTime;
+          audio.removeEventListener('loadedmetadata', seekHandler);
+        }, { once: true });
       }
+      
+      audio.play().then(() => {
+        console.log('✅ Playing:', track.title);
+      }).catch(e => {
+        console.error('❌ Play error:', e);
+        setStatus('⚠️ Ошибка воспроизведения', 'status-error');
+      });
     }
 
-    // 🔥 Воспроизведение промо
+    // 🔥 Воспроизведение промо — ПРЯМАЯ ССЫЛКА
     function playPromo(path) {
       console.log('📢 Playing promo:', path);
-      setStatus('📢 Реклама...', 'status-loading');
-      var streamUrl = API_URL + '?stream=' + encodeURIComponent(path);
-      audio.src = streamUrl;
-      audio.play().then(() => {
-        setStatus('📢 Реклама', 'status-playing');
-      });
+      setStatus('📢 Реклама', 'status-playing');
+      audio.src = path;
+      audio.play();
     }
 
-    // 🔥 Воспроизведение голоса
+    // 🔥 Воспроизведение голоса — ПРЯМАЯ ССЫЛКА
     function playRequest(path, sender) {
-      console.log('🎙️ Playing request from:', sender, path);
+      console.log('🎙️ Playing request:', sender);
       setStatus('🎙️ ' + sender, 'status-request');
-      var streamUrl = API_URL + '?stream=' + encodeURIComponent(path);
-      audio.src = streamUrl;
-      audio.play().then(() => {
-        // После окончания удаляем файл
-        audio.onended = function() {
-          console.log('✅ Request played, deleting:', path);
-          callApi('deletePlayedRequest', { path: path });
-          playNextFromSchedule();
-        };
-      });
+      audio.src = path;
+      audio.play();
+      
+      audio.onended = function() {
+        console.log('✅ Request played, deleting:', path);
+        callApi('deletePlayedRequest', { path: path });
+        playNextFromSchedule();
+      };
     }
 
     // 🔥 Переход к следующему треку
