@@ -1,68 +1,268 @@
-// ==========================================
-// 🔗 API BRIDGE (Обновлено для прямого стриминга)
-// ==========================================
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vladivostok FM</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: system-ui; background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 10px; display: flex; align-items: center; justify-content: center; }
+    .player { background: #fff; border-radius: 16px; padding: 16px; width: 100%; max-width: 450px; max-height: 95vh; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+    .header-row { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+    .logo-circle { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #f0f0f0; }
+    .station-title { font-size: 1.3em; font-weight: 700; color: #1e3c72; }
+    audio { width: 100%; border-radius: 8px; }
+    #status { text-align: center; padding: 8px; border-radius: 8px; font-size: 0.85em; min-height: 35px; display: flex; align-items: center; justify-content: center; }
+    .status-loading { background: #fff3e0; color: #ef6c00; }
+    .status-error { background: #ffebee; color: #c62828; }
+    .status-playing { background: #e3f2fd; color: #1976d2; }
+    .status-request { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+    ul { list-style: none; flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; margin: 0; }
+    li { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; font-size: 0.9em; }
+    li:last-child { border-bottom: none; }
+    li.active { background: #ffebee; border-left: 4px solid #e74c3c; font-weight: 600; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+    .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .live-badge { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.65em; margin-left: 8px; }
+    .actions-row { display: flex; gap: 8px; }
+    .btn-action { flex: 1; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9em; }
+    .btn-upload { background: #28a745; color: white; }
+    .btn-mic { background: #dc3545; color: white; }
+    .btn-mic.recording { animation: pulse-red 1.5s infinite; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); } 70% { box-shadow: 0 0 0 10px rgba(220,53,69,0); } 100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); } }
+    .recording-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; }
+    .rec-timer { font-size: 3em; font-weight: bold; color: #dc3545; margin-bottom: 10px; }
+    .form-box { display: none; margin-top: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+    .form-input { width: 100%; margin-bottom: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .btn-send { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; }
+    .msg { margin-top: 6px; font-size: 0.8em; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="player">
+    <div class="header-row">
+      <img id="logo" class="logo-circle" src="" style="display:none;">
+      <h2 class="station-title">Vladivostok FM</h2>
+    </div>
+    <div id="status">📡 Загрузка...</div>
+    <audio id="audio" controls preload="metadata"></audio>
+    <ul id="list"></ul>
 
-function doPost(e) {
-  try {
-    var lock = LockService.getScriptLock();
-    lock.tryLock(10000);
-    
-    var data = JSON.parse(e.postData.contents);
-    var action = data.action;
-    var result = {};
-    
-    Logger.log('API Call: ' + action);
-    
-    switch (action) {
-      case 'getSchedule':
-        result = getSchedule();
-        break;
-      case 'getPromoMap':
-        result = getPromoMap();
-        break;
-      
-      // 🔥 НОВОЕ: Возвращаем прямую ссылку, а не Base64
-      case 'getAudioUrl':
-        result = { url: getFreshDownloadLink(data.path) };
-        break;
-      
-      case 'getPromoUrl':
-        result = { url: getFreshDownloadLink(data.path) };
-        break;
-      
-      case 'getNextRequest':
-        result = getNextRequest();
-        break;
-      case 'deletePlayedRequest':
-        result = deletePlayedRequest(data.path);
-        break;
-      case 'uploadRequest':
-        result = uploadRequest(data.base64, data.fileName, data.duration);
-        break;
-      case 'getLogoUrl':
-        result = getLogoUrl();
-        break;
-      default:
-        result = { error: 'Unknown action' };
+    <div class="actions-row">
+      <button class="btn-action btn-upload" onclick="toggleFileForm()">📤 Файл</button>
+      <button class="btn-action btn-mic" id="micBtn">🎙️ Hold</button>
+    </div>
+
+    <div id="form-upload" class="form-box">
+      <input type="file" id="upFile" class="form-input" accept="audio/*">
+      <button class="btn-send" onclick="sendFile()">Загрузить</button>
+      <div id="msg-up" class="msg"></div>
+    </div>
+
+    <div id="recOverlay" class="recording-overlay">
+      <div class="rec-timer" id="recTimer">0:00</div>
+      <div>Запись... Отпустите для отправки</div>
+    </div>
+  </div>
+
+  <script>
+    // 🔗 ВСТАВЬТЕ СЮДА ВАШ WEB APP URL
+    const API_URL = 'ВАШ_АДРЕС_ВЕБ_ПРИЛОЖЕНИЯ';
+
+    async function callApi(action, payload = {}) {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action, ...payload })
+        });
+        return await response.json();
+      } catch (e) {
+        console.error('API Error:', e);
+        return { error: e.message };
+      }
     }
-    
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.JSON);
-      
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    lock.releaseLock();
-  }
-}
 
-function doGet(e) {
-  if (e.parameter.page === 'admin') {
-    return HtmlService.createHtmlOutputFromFile('Admin')
-      .setTitle('🎛️ Admin Panel')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-  }
-  return ContentService.createTextOutput(JSON.stringify({ status: 'Online' }))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+    var schedule=[], promoMap={}, currentIdx=-1;
+    var audio=document.getElementById('audio'), statusEl=document.getElementById('status'), listEl=document.getElementById('list');
+    var lastVersion=0, syncTimer=null, lastTrackUrl=null;
+    var mediaRecorder, audioChunks=[], recInterval, recSeconds=0;
+
+    function init() {
+      callApi('getSchedule').then(res => {
+        if(res.schedule) {
+          schedule = res.schedule; 
+          lastVersion = res.version;
+          callApi('getPromoMap').then(map => { promoMap = map || {}; hardSync(); startBackgroundCheck(); });
+        }
+      });
+      callApi('getLogoUrl').then(url => { if(url) { document.getElementById('logo').src=url; document.getElementById('logo').style.display='block'; } });
+    }
+
+    // 🔥 ПРЯМОЙ СТРИМИНГ (БЕЗ BASE64)
+    async function loadAndPlay(track, seekTime) {
+      setStatus('📥 Загрузка: ' + track.title, 'status-loading');
+      
+      try {
+        // Запрашиваем прямую ссылку вместо Base64
+        const res = await callApi('getAudioUrl', { path: track.url });
+        
+        if (res.url) {
+          audio.src = res.url; // 🔥 Прямая ссылка!
+          
+          if (seekTime > 0) {
+            audio.addEventListener('loadedmetadata', function seekHandler() {
+              audio.currentTime = seekTime;
+              audio.removeEventListener('loadedmetadata', seekHandler);
+            }, { once: true });
+          }
+          
+          audio.play().then(() => {
+            setStatus('🎶 Сейчас: ' + track.title, 'status-playing');
+          }).catch(e => setStatus('⚠️ Нажмите Play', 'status-error'));
+        } else {
+          setStatus('❌ Ошибка загрузки', 'status-error');
+        }
+      } catch (e) {
+        setStatus('❌ ' + e.message, 'status-error');
+      }
+    }
+
+    function playPromo(path) {
+      setStatus('📢 Реклама...', 'status-loading');
+      callApi('getPromoUrl', { path: path }).then(res => {
+        if (res.url) {
+          audio.src = res.url;
+          audio.play().then(() => setStatus('📢 Реклама', 'status-playing'));
+        } else {
+          playNextFromSchedule();
+        }
+      });
+    }
+
+    function playRequest(path, sender) {
+      setStatus('🎙️ ' + sender, 'status-request');
+      callApi('getAudioUrl', { path: path }).then(res => {
+        if (res.url) {
+          audio.src = res.url;
+          audio.play().then(() => {
+            // После окончания удаляем файл
+            audio.onended = function() {
+              callApi('deletePlayedRequest', { path: path });
+              playNextFromSchedule();
+            };
+          });
+        } else {
+          playNextFromSchedule();
+        }
+      });
+    }
+
+    function playNextFromSchedule() {
+      currentIdx = (currentIdx + 1) % schedule.length;
+      lastTrackUrl = schedule[currentIdx].url;
+      renderList();
+      
+      callApi('getNextRequest').then(req => {
+        if (req && req.path) playRequest(req.path, req.sender);
+        else {
+          var promoUrl = promoMap[currentIdx];
+          if (promoUrl) playPromo(promoUrl);
+          else loadAndPlay(schedule[currentIdx], 0);
+        }
+      });
+    }
+
+    audio.onended = function() {
+      playNextFromSchedule();
+    };
+
+    function hardSync() {
+      var now=new Date(), cs=(now.getHours()*3600+now.getMinutes()*60+now.getSeconds())%86400;
+      var found=null, idx=-1;
+      for(var i=0;i<schedule.length;i++) if(cs>=schedule[i].startSec && cs<schedule[i].startSec+schedule[i].durationSec){ found=schedule[i]; idx=i; break; }
+      if(!found){ found=schedule[schedule.length-1]; idx=schedule.length-1; }
+      if(idx!==currentIdx || lastTrackUrl!==found.url){
+        currentIdx=idx; lastTrackUrl=found.url; 
+        renderList(); 
+        loadAndPlay(found, Math.max(0, cs-found.startSec));
+      }
+    }
+
+    function startBackgroundCheck(){ if(syncTimer) clearInterval(syncTimer); syncTimer=setInterval(() => {
+      callApi('getSchedule').then(res => {
+        if(res.version !== lastVersion){ schedule=res.schedule; lastVersion=res.version; hardSync(); }
+      });
+    }, 10000); }
+
+    function renderList() {
+      listEl.innerHTML='';
+      schedule.slice(currentIdx).forEach(function(t,i){
+        var li=document.createElement('li');
+        if(i===0) li.className='active';
+        li.innerHTML='<span class="track-title">'+t.title+'</span>'+(i===0?'<span class="live-badge">LIVE</span>':'');
+        listEl.appendChild(li);
+      });
+      listEl.scrollTop=0;
+    }
+
+    function setStatus(t,c){ statusEl.textContent=t; statusEl.className=c; }
+    function toggleFileForm(){ var f=document.getElementById('form-upload'); f.style.display=f.style.display==='block'?'none':'block'; }
+    function sendFile(){ alert('Загрузка файлов в разработке'); }
+
+    // Микрофон
+    document.getElementById('micBtn').addEventListener('mousedown', startRecording);
+    document.getElementById('micBtn').addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); }, {passive:false});
+    window.addEventListener('mouseup', () => { if(document.getElementById('micBtn').classList.contains('recording')) stopRecording(); });
+    window.addEventListener('touchend', () => { if(document.getElementById('micBtn').classList.contains('recording')) stopRecording(); });
+
+    async function startRecording() {
+      try {
+        audioChunks=[]; recSeconds=0;
+        document.getElementById('recOverlay').style.display='flex';
+        document.getElementById('micBtn').classList.add('recording');
+        
+        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+        mediaRecorder.start();
+        
+        recInterval = setInterval(() => {
+          recSeconds++;
+          var m=Math.floor(recSeconds/60), s=recSeconds%60;
+          document.getElementById('recTimer').textContent = m+":"+(s<10?"0":"")+s;
+          if(recSeconds>=60) stopRecording();
+        }, 1000);
+      } catch(e) {
+        alert('Нет доступа к микрофону');
+        stopRecording();
+      }
+    }
+
+    function stopRecording() {
+      clearInterval(recInterval);
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('recOverlay').style.display='none';
+      
+      if(mediaRecorder && mediaRecorder.state!=='inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.onstop = () => {
+          if(recSeconds<1 || audioChunks.length===0) return;
+          
+          var blob = new Blob(audioChunks, {type:'audio/webm'});
+          var fileName = 'voice_'+Date.now()+'.webm';
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            setStatus('📤 Отправка...','status-loading');
+            callApi('uploadRequest', {base64: e.target.result.split(',')[1], fileName: fileName, duration: recSeconds})
+              .then(() => setStatus('🎙️ Отправлено!','status-request'));
+          };
+          reader.readAsDataURL(blob);
+        };
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
