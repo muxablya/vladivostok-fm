@@ -2,92 +2,91 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Vladivostok FM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎙️ Записать привет — Vladivostok FM</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; }
-    body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 10px; display: flex; align-items: center; justify-content: center; }
-    .player { background: #fff; border-radius: 16px; padding: 16px; width: 100%; max-width: 450px; max-height: 95vh; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: system-ui, sans-serif; 
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 20px;
+      color: white;
+    }
+    .container { 
+      background: #fff; 
+      border-radius: 20px; 
+      padding: 30px; 
+      max-width: 400px; 
+      width: 100%; 
+      text-align: center; 
+      color: #333;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    .logo { 
+      width: 80px; height: 80px; border-radius: 50%; object-fit: cover; 
+      margin-bottom: 15px; background: #f0f0f0;
+    }
+    h1 { font-size: 1.4em; margin-bottom: 5px; color: #1e3c72; }
+    .subtitle { color: #666; font-size: 0.95em; margin-bottom: 25px; }
     
-    .header-row { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee; flex-shrink: 0; }
-    .logo-circle { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #f0f0f0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .station-title { font-size: 1.3em; font-weight: 700; color: #1e3c72; margin: 0; line-height: 1.1; }
+    .mic-btn {
+      width: 120px; height: 120px; border-radius: 50%; border: none;
+      background: #dc3545; color: white; font-size: 2.5em; cursor: pointer;
+      margin: 20px auto; display: flex; align-items: center; justify-content: center;
+      transition: 0.2s; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    }
+    .mic-btn:active { transform: scale(0.95); }
+    .mic-btn.recording { 
+      animation: pulse 1.5s infinite; background: #c82333;
+      box-shadow: 0 4px 25px rgba(220, 53, 69, 0.7);
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+      70% { box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
     
-    audio { width: 100%; border-radius: 8px; flex-shrink: 0; }
-    #status { text-align: center; padding: 8px; border-radius: 8px; font-size: 0.85em; min-height: 35px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .status-loading { background: #fff3e0; color: #ef6c00; }
-    .status-error { background: #ffebee; color: #c62828; }
-    .status-playing { background: #e3f2fd; color: #1976d2; }
-    .status-request { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+    .timer { font-size: 2.5em; font-weight: bold; color: #dc3545; margin: 10px 0; font-variant-numeric: tabular-nums; }
+    .hint { color: #888; font-size: 0.9em; margin: 15px 0; }
     
-    ul { list-style: none; flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; margin: 0; scroll-behavior: smooth; min-height: 0; }
-    li { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; transition: 0.2s; font-size: 0.9em; }
-    li:last-child { border-bottom: none; }
-    li.active { background: #ffebee; border-left: 4px solid #e74c3c; font-weight: 600; animation: pulse 2s infinite; }
-    li.cached { background: #e8f5e9; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
-    .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .live-badge { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.65em; margin-left: 8px; font-weight: 600; }
-    .cache-icon { margin-left: 5px; font-size: 0.8em; }
-
-    .actions-row { display: flex; gap: 8px; flex-shrink: 0; }
-    .btn-action { flex: 1; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-upload { background: #28a745; color: white; }
-    .btn-mic { background: #dc3545; color: white; }
-    .btn-mic:active { background: #a71d2a; transform: scale(0.98); }
-    .btn-mic.recording { animation: pulse-red 1.5s infinite; background: #c82333; }
-    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+    .success-box { 
+      display: none; background: #d4edda; color: #155724; 
+      padding: 20px; border-radius: 12px; margin-top: 20px;
+      border: 1px solid #c3e6cb;
+    }
+    .success-box.show { display: block; animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
-    .recording-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; }
-    .rec-timer { font-size: 3em; font-weight: bold; color: #dc3545; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
-    .rec-wave { width: 60px; height: 60px; border-radius: 50%; background: #dc3545; animation: wave 1s infinite; }
-    @keyframes wave { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-
-    .form-box { display: none; margin-top: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
-    .form-input { width: 100%; margin-bottom: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-    .btn-send { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; }
-    .msg { margin-top: 6px; font-size: 0.8em; min-height: 16px; text-align: center; }
-    .mic-hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9em; display: none; z-index: 1000; }
-    .mic-hint.show { display: block; }
+    .error { color: #dc3545; margin: 10px 0; font-size: 0.9em; min-height: 20px; }
+    .close-hint { margin-top: 20px; font-size: 0.85em; color: #666; }
   </style>
 </head>
 <body>
-  <div class="player">
-    <div class="header-row">
-      <img id="logo" class="logo-circle" src="" alt="" referrerpolicy="no-referrer" style="display:none;">
-      <h2 class="station-title">Vladivostok FM</h2>
-    </div>
-    <div id="status">📡 Подключение...</div>
-    <audio id="audio" controls preload="auto"></audio>
-    <ul id="list"></ul>
-
-    <div class="actions-row">
-      <button class="btn-action btn-upload" onclick="toggleFileForm()">📤 Файл</button>
-      <button class="btn-action btn-mic" id="micBtn">🎙️ Hold</button>
-    </div>
-
-    <div id="form-upload" class="form-box">
-      <input type="file" id="upFile" class="form-input" accept="audio/*">
-      <button class="btn-send" id="btnUp" onclick="sendFile()">Загрузить</button>
-      <div id="msg-up" class="msg"></div>
-    </div>
-
-    <div id="recOverlay" class="recording-overlay">
-      <div class="rec-wave"></div>
-      <div class="rec-timer" id="recTimer">0:00</div>
-      <div style="font-size:1.2em; color:#555; margin-bottom:20px;">Запись...</div>
-      <div style="font-size:0.8em; color:#999;">Отпустите, чтобы отправить</div>
+  <div class="container">
+    <img id="logo" class="logo" src="" alt="" referrerpolicy="no-referrer">
+    <h1>Vladivostok FM</h1>
+    <div class="subtitle">Запишите голосовое приветствие</div>
+    
+    <button id="micBtn" class="mic-btn">🎙️</button>
+    <div id="timer" class="timer">0:00</div>
+    <div id="hint" class="hint">Удерживайте кнопку для записи</div>
+    <div id="error" class="error"></div>
+    
+    <div id="successBox" class="success-box">
+      <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
+      <div style="font-weight: 600; margin-bottom: 5px;">Привет отправлен!</div>
+      <div style="font-size: 0.9em;">Он заиграет в эфире после текущего трека.</div>
+      <div class="close-hint">👉 Можете закрыть эту вкладку</div>
     </div>
   </div>
-  <div id="micHint" class="mic-hint"></div>
 
   <script>
-    // ==========================================
-    // 🔗 НАСТРОЙКИ API
-    // ==========================================
-    // ВСТАВЬТЕ СЮДА ВАШ WEB APP URL ИЗ DEPLOY GOOGLE SCRIPT!
-    const API_URL = 'https://script.google.com/macros/s/AKfycbx2APIEjWISSmNzj5lVpawa4OeXSWJhOoxI06AZtND-JLkWW81MzJtNqAbghS9j6l1vVQ/exec'; 
+    // 🔗 ВСТАВЬТЕ ВАШ WEB APP URL ИЗ GOOGLE APPS SCRIPT
+    const API_URL = 'https://script.google.com/macros/s/AKfycbx2APIEjWISSmNzj5lVpawa4OeXSWJhOoxI06AZtND-JLkWW81MzJtNqAbghS9j6l1vVQ/exec';
 
     async function callApi(action, payload = {}) {
       try {
@@ -102,263 +101,108 @@
       }
     }
 
-    var schedule=[], promoMap={}, currentIdx=-1;
-    var audio=document.getElementById('audio'), statusEl=document.getElementById('status'), listEl=document.getElementById('list'), logoEl=document.getElementById('logo');
-    var audioCache={}, prefetchQueue=[], lastVersion=0, syncTimer=null, lastTrackUrl=null, isBuffering=false;
-    var mediaRecorder, audioChunks=[], recInterval, recSeconds=0;
+    var mediaRecorder, audioChunks = [], recInterval, recSeconds = 0;
     var micBtn = document.getElementById('micBtn');
-    var recOverlay = document.getElementById('recOverlay');
-    var recTimer = document.getElementById('recTimer');
-    var micHint = document.getElementById('micHint');
+    var timerEl = document.getElementById('timer');
+    var hintEl = document.getElementById('hint');
+    var errorEl = document.getElementById('error');
+    var successBox = document.getElementById('successBox');
+    var logoEl = document.getElementById('logo');
 
-    function init() {
-      loadLogo();
-      setStatus('📡 Загрузка эфира...', 'status-loading');
-      
-      callApi('getSchedule').then(res => {
-        if(res.schedule) {
-          schedule = res.schedule; 
-          lastVersion = res.version;
-          if(!schedule.length){ setStatus('❌ Эфир пуст.','status-error'); return; }
-          callApi('getPromoMap').then(mapRes => {
-            promoMap = mapRes || {}; 
-            hardSync(); 
-            startBackgroundCheck();
-          });
-        } else {
-          setStatus('❌ Ошибка загрузки','status-error');
-        }
-      });
-    }
+    // Загрузка логотипа
+    callApi('getLogoUrl').then(url => { if(url) logoEl.src = url; });
 
-    function loadLogo() {
-      callApi('getLogoUrl').then(url => { if(url){ logoEl.src=url; logoEl.style.display='block'; } });
-    }
-
-    // 🔥 ЗАПИСЬ ГОЛОСА (С ПАУЗОЙ МУЗЫКИ)
     async function startRecording() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showMicHint('❌ Браузер не поддерживает запись'); return;
+      if (!navigator.mediaDevices?.getUserMedia) {
+        showError('❌ Браузер не поддерживает запись');
+        return;
       }
+      
       try {
-        // 1. Ставим музыку на паузу
-        audio.pause(); 
-        setStatus('🔇 Музыка на паузе', 'status-loading');
-        
         audioChunks = []; recSeconds = 0;
-        recOverlay.style.display = 'flex'; micBtn.classList.add('recording');
-        recTimer.textContent = "0:00";
+        timerEl.textContent = '0:00';
+        micBtn.classList.add('recording');
+        hintEl.textContent = 'Отпустите, чтобы отправить';
+        errorEl.textContent = '';
         
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = event => { if (event.data.size > 0) audioChunks.push(event.data); };
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.start();
         
         recInterval = setInterval(() => {
           recSeconds++;
           var m = Math.floor(recSeconds / 60);
           var s = recSeconds % 60;
-          recTimer.textContent = m + ":" + (s < 10 ? "0" : "") + s;
+          timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
           if (recSeconds >= 60) stopRecording();
         }, 1000);
+        
       } catch (err) {
-        recOverlay.style.display = 'none'; micBtn.classList.remove('recording');
-        showMicHint('❌ Нет доступа к микрофону');
-        // Если ошибка доступа - пробуем возобновить музыку
-        audio.play().catch(()=>{}); 
+        micBtn.classList.remove('recording');
+        hintEl.textContent = 'Удерживайте кнопку для записи';
+        if (err.name === 'NotAllowedError') {
+          showError('❌ Разрешите доступ к микрофону в настройках браузера');
+        } else {
+          showError('❌ Ошибка: ' + err.message);
+        }
       }
     }
 
     function stopRecording() {
-      clearInterval(recInterval); micBtn.classList.remove('recording');
+      clearInterval(recInterval);
+      micBtn.classList.remove('recording');
+      hintEl.textContent = 'Удерживайте кнопку для записи';
       
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
-        mediaRecorder.onstop = () => {
-          recOverlay.style.display = 'none';
+        mediaRecorder.onstop = async () => {
           if (mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
-          
-          // Если запись слишком короткая или пустая
-          if (recSeconds < 1 || audioChunks.length === 0) { 
-            showMicHint('⚠️ Слишком коротко');
-            audio.play(); // Возобновляем музыку
-            return; 
+          if (recSeconds < 1 || audioChunks.length === 0) {
+            showError('⚠️ Слишком короткая запись');
+            return;
           }
           
           var blob = new Blob(audioChunks, { type: 'audio/webm' });
           var fileName = 'voice_' + Date.now() + '.webm';
           var reader = new FileReader();
-          reader.onload = function(e) {
-            setStatus('📤 Отправка...', 'status-loading');
-            callApi('uploadRequest', { base64: e.target.result.split(',')[1], fileName: fileName, duration: recSeconds })
-              .then(() => { 
-                setStatus('🎙️ Голос в очереди!', 'status-request'); 
-                audio.play(); // ✅ Возобновляем музыку ПОСЛЕ успешной отправки
-                setTimeout(()=>setStatus('🎶 Эфир', 'status-playing'), 2000); 
-              })
-              .catch(err => { 
-                setStatus('❌ Ошибка', 'status-error'); 
-                audio.play(); // ✅ Возобновляем музыку даже при ошибке
-              });
+          
+          reader.onload = async function(e) {
+            hintEl.textContent = '📤 Отправка...';
+            var result = await callApi('uploadRequest', {
+              base64: e.target.result.split(',')[1],
+              fileName: fileName,
+              duration: recSeconds
+            });
+            
+            if (result.success) {
+              showSuccess();
+            } else {
+              showError('❌ Ошибка: ' + (result.error || 'Неизвестно'));
+            }
           };
           reader.readAsDataURL(blob);
         };
-      } else { 
-        recOverlay.style.display = 'none'; 
-        audio.play();
       }
     }
 
-    // События микрофона
+    function showError(msg) {
+      errorEl.textContent = msg;
+      setTimeout(() => errorEl.textContent = '', 4000);
+    }
+
+    function showSuccess() {
+      successBox.classList.add('show');
+      micBtn.style.display = 'none';
+      timerEl.style.display = 'none';
+      hintEl.style.display = 'none';
+      errorEl.style.display = 'none';
+    }
+
     micBtn.addEventListener('mousedown', startRecording);
-    micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); }, {passive: false});
-    window.addEventListener('mouseup', () => { if(micBtn.classList.contains('recording')) stopRecording(); });
-    window.addEventListener('touchend', () => { if(micBtn.classList.contains('recording')) stopRecording(); });
-
-    // Загрузка файлов
-    function toggleFileForm() {
-      var f = document.getElementById('form-upload');
-      f.style.display = f.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function sendFile() {
-      var inp=document.getElementById('upFile'), btn=document.getElementById('btnUp'), msg=document.getElementById('msg-up');
-      if(!inp.files[0]){ msg.innerHTML='<span style="color:red">Выберите файл</span>'; return; }
-      btn.disabled=true; btn.textContent='⏳...'; msg.innerHTML='<span style="color:blue">Загрузка...</span>';
-      var r=new FileReader();
-      r.onload=function(e){
-        callApi('uploadTrack', { base64: e.target.result.split(',')[1], fileName: inp.files[0].name })
-          .then(res => {
-            msg.innerHTML='<span style="color:green">✅ '+(res.message||'Готово')+'</span>'; 
-            btn.disabled=false; btn.textContent='Загрузить'; inp.value=''; 
-            setTimeout(()=>toggleFileForm(),2000); 
-          })
-          .catch(err => { 
-            msg.innerHTML='<span style="color:red">❌ Ошибка</span>'; 
-            btn.disabled=false; btn.textContent='Загрузить'; 
-          });
-      }; r.readAsDataURL(inp.files[0]);
-    }
-
-    // Плеер Логика
-    function hardSync() {
-      if(isBuffering) return;
-      var now=new Date(), cs=(now.getHours()*3600+now.getMinutes()*60+now.getSeconds())%86400;
-      var found=null, idx=-1;
-      for(var i=0;i<schedule.length;i++) if(cs>=schedule[i].startSec && cs<schedule[i].startSec+schedule[i].durationSec){ found=schedule[i]; idx=i; break; }
-      if(!found){ found=schedule[schedule.length-1]; idx=schedule.length-1; }
-      if(idx!==currentIdx || lastTrackUrl!==found.url){
-        currentIdx=idx; lastTrackUrl=found.url; renderList(); loadAndPlay(found, Math.max(0, cs-found.startSec)); prefetchNext(3);
-      }
-    }
-
-    function softCheck() {
-      callApi('getSchedule').then(res => {
-        if(res.version !== lastVersion){ schedule=res.schedule; lastVersion=res.version; hardSync(); }
-        else if(audio.paused) hardSync();
-      });
-    }
-
-    function loadAndPlay(track, seekTime) {
-      if(isBuffering) return; isBuffering=true;
-      if(audioCache[track.url]){ isBuffering=false; playBlob(audioCache[track.url], track, seekTime); return; }
-      setStatus('📥 Загрузка...', 'status-loading');
-      callApi('getAudioBase64', { path: track.url }).then(res => {
-        isBuffering=false; 
-        if(res.success){ audioCache[track.url]=res.data; playBlob(res.data, track, seekTime); }
-        else setStatus('❌ Ошибка','status-error');
-      });
-    }
-
-    function playBlob(base64, track, seekTime) {
-      var b=atob(base64), ab=new ArrayBuffer(b.length), ia=new Uint8Array(ab);
-      for(var i=0;i<b.length;i++) ia[i]=b.charCodeAt(i);
-      if(audio.src && audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
-      audio.src=URL.createObjectURL(new Blob([ab], {type:'audio/mpeg'}));
-      audio.oncanplay=function(){
-        audio.oncanplay=null;
-        if(seekTime>0 && seekTime<track.durationSec) audio.currentTime=seekTime;
-        audio.play().then(()=>setStatus('🎶 Сейчас: '+track.title, 'status-playing')).catch(()=>setStatus('⚠️ Play','status-error'));
-      };
-    }
-
-    audio.onended = function() {
-      var fIdx = currentIdx;
-      currentIdx = (currentIdx + 1) % schedule.length;
-      lastTrackUrl = schedule[currentIdx].url;
-      renderList(); prefetchNext(3);
-
-      callApi('getNextRequest').then(req => {
-        if (req && req.path) playRequest(req.path, req.sender); 
-        else {
-          var promoUrl = promoMap[fIdx];
-          if (promoUrl) playPromo(promoUrl); else loadAndPlay(schedule[currentIdx], 0);
-        }
-      });
-    };
-
-    function playRequest(path, sender) {
-      setStatus('🎙️ ' + sender, 'status-request'); isBuffering = true;
-      callApi('getAudioBase64', { path: path }).then(res => {
-        isBuffering = false;
-        if (res.success) {
-          var b=atob(res.data), ab=new ArrayBuffer(b.length), ia=new Uint8Array(ab);
-          for(var i=0;i<b.length;i++) ia[i]=b.charCodeAt(i);
-          if(audio.src && audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
-          audio.src = URL.createObjectURL(new Blob([ab], {type:'audio/webm'}));
-          audio.oncanplay = function(){ audio.oncanplay=null; audio.play(); };
-          audio.onended = function() {
-            callApi('deletePlayedRequest', { path: path }).then(() => { 
-              setupStandardOnEnded(); loadAndPlay(schedule[currentIdx], 0); 
-            });
-          };
-        } else { setupStandardOnEnded(); loadAndPlay(schedule[currentIdx], 0); }
-      });
-    }
-
-    function playPromo(url) {
-      setStatus('📢 Реклама...', 'status-promo'); isBuffering = true;
-      callApi('getPromoBase64', { path: url }).then(res => {
-        isBuffering = false;
-        if (res.success) {
-          var b=atob(res.data), ab=new ArrayBuffer(b.length), ia=new Uint8Array(ab);
-          for(var i=0;i<b.length;i++) ia[i]=b.charCodeAt(i);
-          if(audio.src && audio.src.startsWith('blob:')) URL.revokeObjectURL(audio.src);
-          audio.src = URL.createObjectURL(new Blob([ab], {type:'audio/mpeg'}));
-          audio.oncanplay = function(){ audio.oncanplay=null; audio.play(); };
-          audio.onended = function(){ loadAndPlay(schedule[currentIdx],0); setupStandardOnEnded(); };
-        } else { loadAndPlay(schedule[currentIdx],0); setupStandardOnEnded(); }
-      });
-    }
-
-    function setupStandardOnEnded() {
-      audio.onended = function() {
-        var fIdx = currentIdx;
-        currentIdx = (currentIdx+1)%schedule.length; lastTrackUrl = schedule[currentIdx].url;
-        renderList(); prefetchNext(3);
-        callApi('getNextRequest').then(req => {
-          if(req && req.path) playRequest(req.path, req.sender);
-          else { var pu=promoMap[fIdx]; if(pu) playPromo(pu); else loadAndPlay(schedule[currentIdx],0); }
-        });
-      };
-    }
-
-    function prefetchNext(n) { for(var i=1;i<=n;i++){ var idx=(currentIdx+i)%schedule.length, t=schedule[idx]; if(!audioCache[t.url] && prefetchQueue.indexOf(t.url)===-1){ prefetchQueue.push(t.url); fetchForCache(t); } } }
-    function fetchForCache(t) { callApi('getAudioBase64', { path: t.url }).then(res => { if(res.success){ audioCache[t.url]=res.data; prefetchQueue=prefetchQueue.filter(u=>u!==t.url); renderList(); } }); }
-    function renderList() {
-      listEl.innerHTML='';
-      schedule.slice(currentIdx).forEach(function(t,i){
-        var li=document.createElement('li');
-        if(i===0) li.className='active'; else if(audioCache[t.url]) li.className='cached';
-        li.innerHTML='<span class="track-title">'+t.title+'</span>'+(i===0?'<span class="live-badge">LIVE</span>':'')+(audioCache[t.url]&&i>0?'<span class="cache-icon">💾</span>':'');
-        listEl.appendChild(li);
-      });
-      listEl.scrollTop=0;
-    }
-    function startBackgroundCheck(){ if(syncTimer) clearInterval(syncTimer); syncTimer=setInterval(softCheck,10000); }
-    function setStatus(t,c){ statusEl.textContent=t; statusEl.className=c; }
-    function showMicHint(text) { micHint.textContent = text; micHint.classList.add('show'); setTimeout(() => micHint.classList.remove('show'), 3000); }
-    window.onload=init;
+    micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); }, { passive: false });
+    window.addEventListener('mouseup', () => { if (micBtn.classList.contains('recording')) stopRecording(); });
+    window.addEventListener('touchend', () => { if (micBtn.classList.contains('recording')) stopRecording(); });
   </script>
 </body>
 </html>
