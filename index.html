@@ -269,6 +269,9 @@
     // 🚀 ИНИЦИАЛИЗАЦИЯ
     // ==========================================
     function init() {
+      console.log('🚀 Initializing Vladivostok FM...');
+      console.log(' API URL:', API_URL);
+      
       // Загрузка логотипа
       callApi('getLogoUrl').then(url => { 
         if(url){ 
@@ -280,11 +283,13 @@
       // Загрузка расписания
       setStatus('📡 Загрузка эфира...', 'status-loading');
       callApi('getSchedule').then(res => {
+        console.log('📅 Schedule loaded:', res);
         if(res.schedule && res.schedule.length > 0) {
           schedule = res.schedule; 
           lastVersion = res.version;
           
           callApi('getPromoMap').then(map => { 
+            console.log('📢 Promo map:', map);
             promoMap = map || {}; 
             hardSync(); 
             startBackgroundCheck();
@@ -293,6 +298,7 @@
           setStatus('❌ Эфир пуст', 'status-error');
         }
       }).catch(err => {
+        console.error('❌ Failed to load schedule:', err);
         setStatus('❌ Ошибка: ' + err.message, 'status-error');
       });
     }
@@ -396,16 +402,21 @@
     }
 
     // ==========================================
-    //  ВОСПРОИЗВЕДЕНИЕ (ПРЯМОЙ СТРИМИНГ)
+    // 🎵 ВОСПРОИЗВЕДЕНИЕ (ПРЯМОЙ СТРИМИНГ)
     // ==========================================
     
     // 🔥 Загрузка и воспроизведение трека
     async function loadAndPlay(track, seekTime) {
+      console.log('🎵 Loading track:', track.title);
+      console.log('📁 Track path:', track.url);
+      
       setStatus('📥 Загрузка: ' + track.title, 'status-loading');
       
       try {
-        // Создаем URL для стриминга через GAS
+        // 🔥 Создаем URL для стриминга через Google Apps Script
         var streamUrl = API_URL + '?stream=' + encodeURIComponent(track.url);
+        
+        console.log('🔗 Stream URL:', streamUrl);
         
         audio.src = streamUrl;
         
@@ -417,19 +428,22 @@
         }
         
         audio.play().then(() => {
+          console.log('✅ Playing:', track.title);
           setStatus('🎶 Сейчас: ' + track.title, 'status-playing');
         }).catch(e => {
-          console.error('Play error:', e);
+          console.error('❌ Play error:', e);
           setStatus('⚠️ Нажмите Play', 'status-error');
         });
         
       } catch (e) {
+        console.error('❌ Load error:', e);
         setStatus('❌ Ошибка: ' + e.message, 'status-error');
       }
     }
 
     // 🔥 Воспроизведение промо
     function playPromo(path) {
+      console.log('📢 Playing promo:', path);
       setStatus('📢 Реклама...', 'status-loading');
       var streamUrl = API_URL + '?stream=' + encodeURIComponent(path);
       audio.src = streamUrl;
@@ -440,12 +454,14 @@
 
     // 🔥 Воспроизведение голоса
     function playRequest(path, sender) {
+      console.log('🎙️ Playing request from:', sender, path);
       setStatus('🎙️ ' + sender, 'status-request');
       var streamUrl = API_URL + '?stream=' + encodeURIComponent(path);
       audio.src = streamUrl;
       audio.play().then(() => {
         // После окончания удаляем файл
         audio.onended = function() {
+          console.log('✅ Request played, deleting:', path);
           callApi('deletePlayedRequest', { path: path });
           playNextFromSchedule();
         };
@@ -474,6 +490,7 @@
 
     // Обработчик окончания трека
     audio.onended = function() {
+      console.log('⏹️ Track ended, playing next...');
       playNextFromSchedule();
     };
 
@@ -512,6 +529,7 @@
       syncTimer = setInterval(() => {
         callApi('getSchedule').then(res => {
           if (res.version !== lastVersion) {
+            console.log('🔄 Schedule updated, reloading...');
             schedule = res.schedule; 
             lastVersion = res.version; 
             hardSync();
