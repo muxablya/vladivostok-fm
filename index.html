@@ -5,20 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Vladivostok FM</title>
   <style>
-    /* Стили остались прежними */
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; }
     body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 10px; display: flex; align-items: center; justify-content: center; }
     .player { background: #fff; border-radius: 16px; padding: 16px; width: 100%; max-width: 450px; max-height: 95vh; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
+    
     .header-row { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee; flex-shrink: 0; }
     .logo-circle { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #f0f0f0; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .station-title { font-size: 1.3em; font-weight: 700; color: #1e3c72; margin: 0; line-height: 1.1; }
+    
     audio { width: 100%; border-radius: 8px; flex-shrink: 0; }
     #status { text-align: center; padding: 8px; border-radius: 8px; font-size: 0.85em; min-height: 35px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .status-loading { background: #fff3e0; color: #ef6c00; }
     .status-error { background: #ffebee; color: #c62828; }
     .status-playing { background: #e3f2fd; color: #1976d2; }
     .status-request { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+    
     ul { list-style: none; flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; margin: 0; scroll-behavior: smooth; min-height: 0; }
     li { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; transition: 0.2s; font-size: 0.9em; }
     li:last-child { border-bottom: none; }
@@ -28,6 +30,7 @@
     .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .live-badge { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.65em; margin-left: 8px; font-weight: 600; }
     .cache-icon { margin-left: 5px; font-size: 0.8em; }
+
     .actions-row { display: flex; gap: 8px; flex-shrink: 0; }
     .btn-action { flex: 1; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9em; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-upload { background: #28a745; color: white; }
@@ -35,10 +38,12 @@
     .btn-mic:active { background: #a71d2a; transform: scale(0.98); }
     .btn-mic.recording { animation: pulse-red 1.5s infinite; background: #c82333; }
     @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+    
     .recording-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; }
     .rec-timer { font-size: 3em; font-weight: bold; color: #dc3545; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
     .rec-wave { width: 60px; height: 60px; border-radius: 50%; background: #dc3545; animation: wave 1s infinite; }
     @keyframes wave { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+
     .form-box { display: none; margin-top: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
     .form-input { width: 100%; margin-bottom: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
     .btn-send { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; }
@@ -81,10 +86,9 @@
     // ==========================================
     // 🔗 НАСТРОЙКИ API
     // ==========================================
-    // Вставьте сюда ваш Web App URL из Deploy Google Script!
+    // ВСТАВЬТЕ СЮДА ВАШ WEB APP URL ИЗ DEPLOY GOOGLE SCRIPT!
     const API_URL = 'https://script.google.com/macros/s/AKfycbx2APIEjWISSmNzj5lVpawa4OeXSWJhOoxI06AZtND-JLkWW81MzJtNqAbghS9j6l1vVQ/exec'; 
 
-    // Функция для общения с сервером (заменяет google.script.run)
     async function callApi(action, payload = {}) {
       try {
         const response = await fetch(API_URL, {
@@ -131,11 +135,16 @@
       callApi('getLogoUrl').then(url => { if(url){ logoEl.src=url; logoEl.style.display='block'; } });
     }
 
+    // 🔥 ЗАПИСЬ ГОЛОСА (С ПАУЗОЙ МУЗЫКИ)
     async function startRecording() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         showMicHint('❌ Браузер не поддерживает запись'); return;
       }
       try {
+        // 1. Ставим музыку на паузу
+        audio.pause(); 
+        setStatus('🔇 Музыка на паузе', 'status-loading');
+        
         audioChunks = []; recSeconds = 0;
         recOverlay.style.display = 'flex'; micBtn.classList.add('recording');
         recTimer.textContent = "0:00";
@@ -155,17 +164,26 @@
       } catch (err) {
         recOverlay.style.display = 'none'; micBtn.classList.remove('recording');
         showMicHint('❌ Нет доступа к микрофону');
+        // Если ошибка доступа - пробуем возобновить музыку
+        audio.play().catch(()=>{}); 
       }
     }
 
     function stopRecording() {
       clearInterval(recInterval); micBtn.classList.remove('recording');
+      
       if (mediaRecorder && mediaRecorder.state !== 'inactive') {
         mediaRecorder.stop();
         mediaRecorder.onstop = () => {
           recOverlay.style.display = 'none';
           if (mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
-          if (recSeconds < 1 || audioChunks.length === 0) { showMicHint('⚠️ Слишком коротко'); return; }
+          
+          // Если запись слишком короткая или пустая
+          if (recSeconds < 1 || audioChunks.length === 0) { 
+            showMicHint('⚠️ Слишком коротко');
+            audio.play(); // Возобновляем музыку
+            return; 
+          }
           
           var blob = new Blob(audioChunks, { type: 'audio/webm' });
           var fileName = 'voice_' + Date.now() + '.webm';
@@ -173,19 +191,31 @@
           reader.onload = function(e) {
             setStatus('📤 Отправка...', 'status-loading');
             callApi('uploadRequest', { base64: e.target.result.split(',')[1], fileName: fileName, duration: recSeconds })
-              .then(() => { setStatus('🎙️ Голос в очереди!', 'status-request'); setTimeout(()=>setStatus('🎶 Эфир', 'status-playing'), 2000); })
-              .catch(err => setStatus('❌ Ошибка', 'status-error'));
+              .then(() => { 
+                setStatus('🎙️ Голос в очереди!', 'status-request'); 
+                audio.play(); // ✅ Возобновляем музыку ПОСЛЕ успешной отправки
+                setTimeout(()=>setStatus('🎶 Эфир', 'status-playing'), 2000); 
+              })
+              .catch(err => { 
+                setStatus('❌ Ошибка', 'status-error'); 
+                audio.play(); // ✅ Возобновляем музыку даже при ошибке
+              });
           };
           reader.readAsDataURL(blob);
         };
-      } else { recOverlay.style.display = 'none'; }
+      } else { 
+        recOverlay.style.display = 'none'; 
+        audio.play();
+      }
     }
 
+    // События микрофона
     micBtn.addEventListener('mousedown', startRecording);
     micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); }, {passive: false});
     window.addEventListener('mouseup', () => { if(micBtn.classList.contains('recording')) stopRecording(); });
     window.addEventListener('touchend', () => { if(micBtn.classList.contains('recording')) stopRecording(); });
 
+    // Загрузка файлов
     function toggleFileForm() {
       var f = document.getElementById('form-upload');
       f.style.display = f.style.display === 'block' ? 'none' : 'block';
@@ -197,13 +227,20 @@
       btn.disabled=true; btn.textContent='⏳...'; msg.innerHTML='<span style="color:blue">Загрузка...</span>';
       var r=new FileReader();
       r.onload=function(e){
-        // Загрузка файлов в библиотеку требует отдельной функции на сервере, 
-        // для примера оставим заглушку или можно добавить action 'uploadTrack' в Api.gs
-        msg.innerHTML='<span style="color:red">Функция в разработке</span>'; 
-        btn.disabled=false; btn.textContent='Загрузить';
+        callApi('uploadTrack', { base64: e.target.result.split(',')[1], fileName: inp.files[0].name })
+          .then(res => {
+            msg.innerHTML='<span style="color:green">✅ '+(res.message||'Готово')+'</span>'; 
+            btn.disabled=false; btn.textContent='Загрузить'; inp.value=''; 
+            setTimeout(()=>toggleFileForm(),2000); 
+          })
+          .catch(err => { 
+            msg.innerHTML='<span style="color:red">❌ Ошибка</span>'; 
+            btn.disabled=false; btn.textContent='Загрузить'; 
+          });
       }; r.readAsDataURL(inp.files[0]);
     }
 
+    // Плеер Логика
     function hardSync() {
       if(isBuffering) return;
       var now=new Date(), cs=(now.getHours()*3600+now.getMinutes()*60+now.getSeconds())%86400;
