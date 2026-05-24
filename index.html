@@ -7,202 +7,37 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; }
-    body { 
-      font-family: system-ui, -apple-system, sans-serif; 
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
-      padding: 10px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-    }
-    .player { 
-      background: #fff; 
-      border-radius: 16px; 
-      padding: 16px; 
-      width: 100%; 
-      max-width: 450px; 
-      max-height: 95vh; 
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3); 
-      display: flex; 
-      flex-direction: column; 
-      gap: 12px; 
-      overflow: hidden; 
-      position: relative;
-    }
-    .header-row { 
-      display: flex; 
-      align-items: center; 
-      gap: 12px; 
-      padding-bottom: 10px; 
-      border-bottom: 1px solid #eee; 
-      flex-shrink: 0;
-    }
-    .logo-circle { 
-      width: 55px; 
-      height: 55px; 
-      border-radius: 50%; 
-      object-fit: cover; 
-      background: #f0f0f0; 
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .station-title { 
-      font-size: 1.3em; 
-      font-weight: 700; 
-      color: #1e3c72; 
-      margin: 0;
-    }
-    audio { 
-      width: 100%; 
-      border-radius: 8px; 
-      flex-shrink: 0;
-    }
-    #status { 
-      text-align: center; 
-      padding: 8px; 
-      border-radius: 8px; 
-      font-size: 0.85em; 
-      min-height: 35px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      flex-shrink: 0;
-    }
+    body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 10px; display: flex; align-items: center; justify-content: center; }
+    .player { background: #fff; border-radius: 16px; padding: 16px; width: 100%; max-width: 450px; max-height: 95vh; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 12px; overflow: hidden; position: relative; }
+    .header-row { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+    .logo-circle { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; background: #f0f0f0; }
+    .station-title { font-size: 1.3em; font-weight: 700; color: #1e3c72; margin: 0; }
+    audio { width: 100%; border-radius: 8px; }
+    #status { text-align: center; padding: 8px; border-radius: 8px; font-size: 0.85em; min-height: 35px; display: flex; align-items: center; justify-content: center; }
     .status-loading { background: #fff3e0; color: #ef6c00; }
     .status-error { background: #ffebee; color: #c62828; }
     .status-playing { background: #e3f2fd; color: #1976d2; }
     .status-request { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
-    
-    ul { 
-      list-style: none; 
-      flex: 1; 
-      overflow-y: auto; 
-      border: 1px solid #e0e0e0; 
-      border-radius: 8px; 
-      margin: 0; 
-      scroll-behavior: smooth;
-      min-height: 0;
-    }
-    li { 
-      padding: 10px 14px; 
-      border-bottom: 1px solid #f0f0f0; 
-      display: flex; 
-      align-items: center; 
-      transition: 0.2s; 
-      font-size: 0.9em;
-    }
+    ul { list-style: none; flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; margin: 0; min-height: 0; }
+    li { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; font-size: 0.9em; }
     li:last-child { border-bottom: none; }
-    li.active { 
-      background: #ffebee; 
-      border-left: 4px solid #e74c3c; 
-      font-weight: 600; 
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 
-      0%, 100% { opacity: 1; } 
-      50% { opacity: 0.8; } 
-    }
-    .track-title { 
-      flex: 1; 
-      overflow: hidden; 
-      text-overflow: ellipsis; 
-      white-space: nowrap;
-    }
-    .live-badge { 
-      background: #e74c3c; 
-      color: #fff; 
-      padding: 2px 6px; 
-      border-radius: 4px; 
-      font-size: 0.65em; 
-      margin-left: 8px; 
-      font-weight: 600;
-    }
-    
-    .actions-row { 
-      display: flex; 
-      gap: 8px; 
-      flex-shrink: 0;
-    }
-    .btn-action { 
-      flex: 1; 
-      border: none; 
-      padding: 12px; 
-      border-radius: 12px; 
-      cursor: pointer; 
-      font-weight: 600; 
-      font-size: 0.9em; 
-      transition: 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
+    li.active { background: #ffebee; border-left: 4px solid #e74c3c; font-weight: 600; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+    .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .live-badge { background: #e74c3c; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.65em; margin-left: 8px; }
+    .actions-row { display: flex; gap: 8px; }
+    .btn-action { flex: 1; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.9em; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-upload { background: #28a745; color: white; }
-    .btn-upload:hover { background: #218838; }
     .btn-mic { background: #dc3545; color: white; }
-    .btn-mic:active { background: #a71d2a; transform: scale(0.98); }
-    .btn-mic.recording { 
-      animation: pulse-red 1.5s infinite; 
-      background: #c82333;
-    }
-    @keyframes pulse-red { 
-      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 
-      70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); } 
-      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } 
-    }
-    
-    .recording-overlay { 
-      display: none; 
-      position: absolute; 
-      top: 0; 
-      left: 0; 
-      width: 100%; 
-      height: 100%; 
-      background: rgba(255,255,255,0.95); 
-      z-index: 100; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
-      border-radius: 16px;
-    }
-    .rec-timer { 
-      font-size: 3em; 
-      font-weight: bold; 
-      color: #dc3545; 
-      margin-bottom: 10px;
-      font-variant-numeric: tabular-nums;
-    }
-    
-    .form-box { 
-      display: none; 
-      margin-top: 8px; 
-      background: #f8f9fa; 
-      padding: 10px; 
-      border-radius: 8px;
-    }
-    .form-input { 
-      width: 100%; 
-      margin-bottom: 6px; 
-      padding: 8px; 
-      border: 1px solid #ddd; 
-      border-radius: 4px;
-    }
-    .btn-send { 
-      background: #007bff; 
-      color: white; 
-      border: none; 
-      padding: 8px; 
-      border-radius: 4px; 
-      cursor: pointer; 
-      width: 100%; 
-      font-weight: 600;
-    }
+    .btn-mic.recording { animation: pulse-red 1.5s infinite; background: #c82333; }
+    @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); } 70% { box-shadow: 0 0 0 10px rgba(220,53,69,0); } 100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); } }
+    .recording-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; }
+    .rec-timer { font-size: 3em; font-weight: bold; color: #dc3545; margin-bottom: 10px; }
+    .form-box { display: none; margin-top: 8px; background: #f8f9fa; padding: 10px; border-radius: 8px; }
+    .form-input { width: 100%; margin-bottom: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .btn-send { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; }
     .btn-send:disabled { background: #ccc; cursor: not-allowed; }
-    .msg { 
-      margin-top: 6px; 
-      font-size: 0.8em; 
-      min-height: 16px; 
-      text-align: center;
-    }
+    .msg { margin-top: 6px; font-size: 0.8em; text-align: center; }
   </style>
 </head>
 <body>
@@ -212,7 +47,7 @@
       <h2 class="station-title">Vladivostok FM</h2>
     </div>
     <div id="status">📡 Подключение...</div>
-    <audio id="audio" controls preload="metadata"></audio>
+    <audio id="audio" controls preload="auto"></audio>
     <ul id="list"></ul>
 
     <div class="actions-row">
@@ -222,364 +57,172 @@
 
     <div id="form-upload" class="form-box">
       <input type="file" id="upFile" class="form-input" accept="audio/*">
-      <button class="btn-send" id="btnUp" onclick="sendFile()">Загрузить трек</button>
+      <button class="btn-send" id="btnUp" onclick="sendFile()">Загрузить</button>
       <div id="msg-up" class="msg"></div>
     </div>
 
     <div id="recOverlay" class="recording-overlay">
       <div class="rec-timer" id="recTimer">0:00</div>
       <div style="font-size:1.2em; color:#555; margin-bottom:20px;">Запись...</div>
-      <div style="font-size:0.8em; color:#999;">Отпустите, чтобы отправить</div>
     </div>
   </div>
 
   <script>
-    // ==========================================
-    // 🔗 НАСТРОЙКИ API
-    // ==========================================
-    // ⚠️ ЗАМЕНИТЕ НА ВАШ WEB APP URL!
+    // ⚠️ ЗАМЕНИТЕ НА ВАШ WEB APP URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbx2APIEjWISSmNzj5lVpawa4OeXSWJhOoxI06AZtND-JLkWW81MzJtNqAbghS9j6l1vVQ/exec';
 
-    // Функция для общения с сервером
     async function callApi(action, payload = {}) {
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action, ...payload })
-        });
-        return await response.json();
-      } catch (e) {
-        console.error('API Error:', e);
-        return { error: e.message };
-      }
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+        return await res.json();
+      } catch (e) { return { error: e.message }; }
     }
 
-    // ==========================================
-    // 🎵 ПЕРЕМЕННЫЕ ПЛЕЕРА
-    // ==========================================
     var schedule=[], promoMap={}, currentIdx=-1;
     var audio=document.getElementById('audio'), statusEl=document.getElementById('status'), listEl=document.getElementById('list');
     var lastVersion=0, syncTimer=null, lastTrackUrl=null;
     var mediaRecorder, audioChunks=[], recInterval, recSeconds=0;
-    var micBtn = document.getElementById('micBtn');
-    var recOverlay = document.getElementById('recOverlay');
-    var recTimer = document.getElementById('recTimer');
 
-    // ==========================================
-    // 🚀 ИНИЦИАЛИЗАЦИЯ
-    // ==========================================
     function init() {
-      console.log('🚀 Initializing Vladivostok FM...');
-      console.log(' API URL:', API_URL);
-      
-      // Загрузка логотипа
-      callApi('getLogoUrl').then(url => { 
-        if(url){ 
-          document.getElementById('logo').src=url; 
-          document.getElementById('logo').style.display='block'; 
-        } 
-      });
-
-      // Загрузка расписания
+      callApi('getLogoUrl').then(url => { if(url) { document.getElementById('logo').src=url; document.getElementById('logo').style.display='block'; } });
       setStatus('📡 Загрузка эфира...', 'status-loading');
+      
       callApi('getSchedule').then(res => {
-        console.log('📅 Schedule loaded:', res);
         if(res.schedule && res.schedule.length > 0) {
-          schedule = res.schedule; 
-          lastVersion = res.version;
-          
-          callApi('getPromoMap').then(map => { 
-            console.log('📢 Promo map:', map);
-            promoMap = map || {}; 
-            hardSync(); 
-            startBackgroundCheck();
-          });
-        } else {
-          setStatus('❌ Эфир пуст', 'status-error');
-        }
-      }).catch(err => {
-        console.error('❌ Failed to load schedule:', err);
-        setStatus('❌ Ошибка: ' + err.message, 'status-error');
-      });
+          schedule = res.schedule; lastVersion = res.version;
+          callApi('getPromoMap').then(map => { promoMap = map || {}; hardSync(); startBackgroundCheck(); });
+        } else { setStatus('❌ Эфир пуст', 'status-error'); }
+      }).catch(err => setStatus('❌ Ошибка сети', 'status-error'));
     }
 
-    // ==========================================
-    // 🎙️ ЗАПИСЬ ГОЛОСА (МИКРОФОН)
-    // ==========================================
-    micBtn.addEventListener('mousedown', startRecording);
-    micBtn.addEventListener('touchstart', (e) => { 
-      e.preventDefault(); 
-      startRecording(); 
-    }, {passive: false});
-    
-    window.addEventListener('mouseup', () => { 
-      if(micBtn.classList.contains('recording')) stopRecording(); 
-    });
-    window.addEventListener('touchend', () => { 
-      if(micBtn.classList.contains('recording')) stopRecording(); 
-    });
-
-    async function startRecording() {
-      try {
-        audioChunks = [];
-        recSeconds = 0;
-        recOverlay.style.display = 'flex';
-        micBtn.classList.add('recording');
-        recTimer.textContent = "0:00";
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        
-        mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) audioChunks.push(event.data);
-        };
-        
-        mediaRecorder.start();
-        
-        recInterval = setInterval(() => {
-          recSeconds++;
-          var m = Math.floor(recSeconds / 60);
-          var s = recSeconds % 60;
-          recTimer.textContent = m + ":" + (s < 10 ? "0" : "") + s;
-          
-          if (recSeconds >= 60) stopRecording();
-        }, 1000);
-        
-      } catch (err) {
-        console.error('Mic error:', err);
-        recOverlay.style.display = 'none';
-        micBtn.classList.remove('recording');
-        alert('❌ Нет доступа к микрофону. Разрешите в настройках браузера.');
-      }
-    }
-
-    function stopRecording() {
-      clearInterval(recInterval);
-      micBtn.classList.remove('recording');
-      
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        
-        mediaRecorder.onstop = () => {
-          recOverlay.style.display = 'none';
-          
-          // Останавливаем треки
-          if (mediaRecorder.stream) {
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-          }
-          
-          if (recSeconds < 1 || audioChunks.length === 0) {
-            alert('⚠️ Слишком короткая запись');
-            return;
-          }
-          
-          var blob = new Blob(audioChunks, { type: 'audio/webm' });
-          var fileName = 'voice_' + Date.now() + '.webm';
-          
-          var reader = new FileReader();
-          reader.onload = function(e) {
-            setStatus('📤 Отправка голоса...', 'status-loading');
-            
-            callApi('uploadRequest', {
-              base64: e.target.result.split(',')[1], 
-              fileName: fileName, 
-              duration: recSeconds
-            }).then(() => {
-              setStatus('🎙️ Голос в очереди!', 'status-request');
-              setTimeout(() => {
-                setStatus('🎶 Эфир', 'status-playing');
-              }, 2000);
-            }).catch(err => {
-              setStatus('❌ Ошибка: ' + err.message, 'status-error');
-            });
-          };
-          
-          reader.readAsDataURL(blob);
-        };
-      } else {
-        recOverlay.style.display = 'none';
-      }
-    }
-
-    // ==========================================
-    // 🎵 ВОСПРОИЗВЕДЕНИЕ (ПРЯМОЙ СТРИМИНГ)
-    // ==========================================
-    
-    // 🔥 Загрузка и воспроизведение трека — ПРЯМАЯ ССЫЛКА!
+    // 🔥 ПРАВИЛЬНОЕ ВОСПРОИЗВЕДЕНИЕ (с обработкой автоблока)
     async function loadAndPlay(track, seekTime) {
-      console.log('🎵 Loading track:', track.title);
-      console.log('📁 Direct URL:', track.url);
+      console.log('🎵 Track:', track.title);
+      setStatus('📥 Загрузка...', 'status-loading');
       
-      setStatus('🎶 Сейчас: ' + track.title, 'status-playing');
-      
-      // 🔥 Используем ПРЯМУЮ ссылку без прокси!
-      audio.src = track.url;
+      // 🔗 Используем GAS-прокси для стабильности (прямые ссылки дают 403/CORS)
+      audio.src = API_URL + '?stream=' + encodeURIComponent(track.url);
       
       if (seekTime > 0) {
-        audio.addEventListener('loadedmetadata', function seekHandler() {
-          audio.currentTime = seekTime;
-          audio.removeEventListener('loadedmetadata', seekHandler);
-        }, { once: true });
+        audio.addEventListener('loadedmetadata', () => { audio.currentTime = seekTime; }, { once: true });
       }
-      
-      audio.play().then(() => {
-        console.log('✅ Playing:', track.title);
-      }).catch(e => {
-        console.error('❌ Play error:', e);
-        setStatus('⚠️ Ошибка воспроизведения', 'status-error');
-      });
+
+      try {
+        await audio.play();
+        setStatus('🎶 Сейчас: ' + track.title, 'status-playing');
+      } catch (err) {
+        if (err.name === 'NotAllowedError') {
+          setStatus('⚠️ Нажмите ▶ Play для старта эфира', 'status-loading');
+        } else {
+          setStatus('❌ Ошибка: ' + err.message, 'status-error');
+        }
+      }
     }
 
-    // 🔥 Воспроизведение промо — ПРЯМАЯ ССЫЛКА
     function playPromo(path) {
-      console.log('📢 Playing promo:', path);
-      setStatus('📢 Реклама', 'status-playing');
-      audio.src = path;
-      audio.play();
+      setStatus('📢 Реклама...', 'status-loading');
+      audio.src = API_URL + '?stream=' + encodeURIComponent(path);
+      audio.play().catch(() => setStatus('⚠️ Нажмите Play', 'status-loading'));
     }
 
-    // 🔥 Воспроизведение голоса — ПРЯМАЯ ССЫЛКА
     function playRequest(path, sender) {
-      console.log('🎙️ Playing request:', sender);
       setStatus('🎙️ ' + sender, 'status-request');
-      audio.src = path;
-      audio.play();
-      
-      audio.onended = function() {
-        console.log('✅ Request played, deleting:', path);
-        callApi('deletePlayedRequest', { path: path });
-        playNextFromSchedule();
-      };
+      audio.src = API_URL + '?stream=' + encodeURIComponent(path);
+      audio.play().catch(() => {});
+      audio.onended = () => { callApi('deletePlayedRequest', { path }); playNextFromSchedule(); };
     }
 
-    // 🔥 Переход к следующему треку
     function playNextFromSchedule() {
       currentIdx = (currentIdx + 1) % schedule.length;
       lastTrackUrl = schedule[currentIdx].url;
       renderList();
-      
       callApi('getNextRequest').then(req => {
-        if (req && req.path) {
-          playRequest(req.path, req.sender);
-        } else {
-          var promoUrl = promoMap[currentIdx];
-          if (promoUrl) {
-            playPromo(promoUrl);
-          } else {
-            loadAndPlay(schedule[currentIdx], 0);
-          }
-        }
+        if (req && req.path) playRequest(req.path, req.sender);
+        else if (promoMap[currentIdx]) playPromo(promoMap[currentIdx]);
+        else loadAndPlay(schedule[currentIdx], 0);
       });
     }
 
-    // Обработчик окончания трека
-    audio.onended = function() {
-      console.log('⏹️ Track ended, playing next...');
-      playNextFromSchedule();
-    };
+    audio.onended = playNextFromSchedule;
 
-    // ==========================================
-    // 🔄 СИНХРОНИЗАЦИЯ
-    // ==========================================
     function hardSync() {
-      var now = new Date();
-      var currentDaySec = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) % 86400;
-      
+      var now = new Date(), cs = (now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds()) % 86400;
       var found = null, idx = -1;
-      for (var i = 0; i < schedule.length; i++) {
-        if (currentDaySec >= schedule[i].startSec && 
-            currentDaySec < schedule[i].startSec + schedule[i].durationSec) {
-          found = schedule[i]; 
-          idx = i; 
-          break;
-        }
-      }
-      
-      if (!found) { 
-        found = schedule[schedule.length - 1]; 
-        idx = schedule.length - 1; 
-      }
-      
+      for (var i=0; i<schedule.length; i++) if (cs >= schedule[i].startSec && cs < schedule[i].startSec + schedule[i].durationSec) { found = schedule[i]; idx = i; break; }
+      if (!found) { found = schedule[schedule.length-1]; idx = schedule.length-1; }
       if (idx !== currentIdx || lastTrackUrl !== found.url) {
-        currentIdx = idx; 
-        lastTrackUrl = found.url; 
-        renderList(); 
-        loadAndPlay(found, Math.max(0, currentDaySec - found.startSec));
+        currentIdx = idx; lastTrackUrl = found.url; renderList(); loadAndPlay(found, Math.max(0, cs - found.startSec));
       }
     }
 
     function startBackgroundCheck() {
-      if (syncTimer) clearInterval(syncTimer);
+      if(syncTimer) clearInterval(syncTimer);
       syncTimer = setInterval(() => {
         callApi('getSchedule').then(res => {
-          if (res.version !== lastVersion) {
-            console.log('🔄 Schedule updated, reloading...');
-            schedule = res.schedule; 
-            lastVersion = res.version; 
-            hardSync();
-          } else if (audio.paused) {
-            hardSync();
-          }
+          if (res.version !== lastVersion) { schedule = res.schedule; lastVersion = res.version; hardSync(); }
+          else if (audio.paused) hardSync();
         });
       }, 10000);
     }
 
-    // ==========================================
-    // 📋 ОТОБРАЖЕНИЕ СПИСКА
-    // ==========================================
     function renderList() {
       listEl.innerHTML = '';
-      schedule.slice(currentIdx).forEach(function(t, i) {
-        var li = document.createElement('li');
+      schedule.slice(currentIdx).forEach((t, i) => {
+        const li = document.createElement('li');
         if (i === 0) li.className = 'active';
-        li.innerHTML = '<span class="track-title">' + t.title + '</span>' + 
-                      (i === 0 ? '<span class="live-badge">LIVE</span>' : '');
+        li.innerHTML = `<span class="track-title">${t.title}</span>${i===0?'<span class="live-badge">LIVE</span>':''}`;
         listEl.appendChild(li);
       });
       listEl.scrollTop = 0;
     }
 
-    // ==========================================
-    // 📤 ЗАГРУЗКА ФАЙЛОВ
-    // ==========================================
-    function toggleFileForm() {
-      var f = document.getElementById('form-upload');
-      f.style.display = f.style.display === 'block' ? 'none' : 'block';
+    function toggleFileForm() { const f=document.getElementById('form-upload'); f.style.display = f.style.display==='block'?'none':'block'; }
+    function sendFile() { document.getElementById('msg-up').innerHTML = '<span style="color:orange">Загрузка в разработке</span>'; }
+
+    // Микрофон
+    const micBtn = document.getElementById('micBtn');
+    micBtn.addEventListener('mousedown', startRec);
+    micBtn.addEventListener('touchstart', e => { e.preventDefault(); startRec(); }, {passive:false});
+    window.addEventListener('mouseup', () => { if(micBtn.classList.contains('recording')) stopRec(); });
+    window.addEventListener('touchend', () => { if(micBtn.classList.contains('recording')) stopRec(); });
+
+    async function startRec() {
+      try {
+        audioChunks=[]; recSeconds=0;
+        document.getElementById('recOverlay').style.display='flex';
+        micBtn.classList.add('recording');
+        document.getElementById('recTimer').textContent='0:00';
+        const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); };
+        mediaRecorder.start();
+        recInterval = setInterval(() => {
+          recSeconds++;
+          const m=Math.floor(recSeconds/60), s=recSeconds%60;
+          document.getElementById('recTimer').textContent = m+':'+(s<10?'0':'')+s;
+          if(recSeconds>=60) stopRec();
+        }, 1000);
+      } catch(e) { alert('❌ Нет доступа к микрофону'); stopRec(); }
     }
 
-    function sendFile() {
-      var inp = document.getElementById('upFile');
-      var btn = document.getElementById('btnUp');
-      var msg = document.getElementById('msg-up');
-      
-      if (!inp.files[0]) {
-        msg.innerHTML = '<span style="color:red">Выберите файл</span>';
-        return;
+    function stopRec() {
+      clearInterval(recInterval); micBtn.classList.remove('recording'); document.getElementById('recOverlay').style.display='none';
+      if(mediaRecorder && mediaRecorder.state!=='inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.onstop = () => {
+          if(recSeconds<1 || audioChunks.length===0) return;
+          const blob=new Blob(audioChunks,{type:'audio/webm'}), fileName='voice_'+Date.now()+'.webm';
+          const reader=new FileReader();
+          reader.onload=e => {
+            setStatus('📤 Отправка...','status-loading');
+            callApi('uploadRequest',{base64:e.target.result.split(',')[1],fileName,duration:recSeconds})
+              .then(()=>setStatus('🎙️ Отправлено!','status-request'));
+          };
+          reader.readAsDataURL(blob);
+        };
       }
-      
-      btn.disabled = true;
-      btn.textContent = '⏳ Загрузка...';
-      msg.innerHTML = '<span style="color:blue">Загрузка файла...</span>';
-      
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        // Здесь можно добавить вызов API для загрузки
-        msg.innerHTML = '<span style="color:orange">Функция в разработке</span>';
-        btn.disabled = false;
-        btn.textContent = 'Загрузить трек';
-      };
-      reader.readAsDataURL(inp.files[0]);
     }
 
-    // ==========================================
-    // 🎛️ УТИЛИТЫ
-    // ==========================================
-    function setStatus(text, className) {
-      statusEl.textContent = text;
-      statusEl.className = className;
-    }
-
-    // Запуск при загрузке
     window.onload = init;
   </script>
 </body>
