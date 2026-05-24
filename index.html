@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎙️ Записать привет — Vladivostok FM</title>
   <style>
+    /* Стили остались прежними */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { 
       font-family: system-ui, sans-serif; 
@@ -26,10 +27,7 @@
       color: #333;
       box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     }
-    .logo { 
-      width: 80px; height: 80px; border-radius: 50%; object-fit: cover; 
-      margin-bottom: 15px; background: #f0f0f0;
-    }
+    .logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; background: #f0f0f0; display: none; }
     h1 { font-size: 1.4em; margin-bottom: 5px; color: #1e3c72; }
     .subtitle { color: #666; font-size: 0.95em; margin-bottom: 25px; }
     
@@ -40,29 +38,18 @@
       transition: 0.2s; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
     }
     .mic-btn:active { transform: scale(0.95); }
-    .mic-btn.recording { 
-      animation: pulse 1.5s infinite; background: #c82333;
-      box-shadow: 0 4px 25px rgba(220, 53, 69, 0.7);
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-      70% { box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-    }
+    .mic-btn.recording { animation: pulse 1.5s infinite; background: #c82333; box-shadow: 0 4px 25px rgba(220, 53, 69, 0.7); }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
     
     .timer { font-size: 2.5em; font-weight: bold; color: #dc3545; margin: 10px 0; font-variant-numeric: tabular-nums; }
     .hint { color: #888; font-size: 0.9em; margin: 15px 0; }
     
-    .success-box { 
-      display: none; background: #d4edda; color: #155724; 
-      padding: 20px; border-radius: 12px; margin-top: 20px;
-      border: 1px solid #c3e6cb;
-    }
+    .success-box { display: none; background: #d4edda; color: #155724; padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid #c3e6cb; }
     .success-box.show { display: block; animation: fadeIn 0.3s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
     .error { color: #dc3545; margin: 10px 0; font-size: 0.9em; min-height: 20px; }
-    .close-hint { margin-top: 20px; font-size: 0.85em; color: #666; }
+    .back-link { margin-top: 20px; display: inline-block; color: #1e3c72; text-decoration: none; font-weight: 600; border-bottom: 1px dashed #1e3c72; }
   </style>
 </head>
 <body>
@@ -79,14 +66,31 @@
     <div id="successBox" class="success-box">
       <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
       <div style="font-weight: 600; margin-bottom: 5px;">Привет отправлен!</div>
-      <div style="font-size: 0.9em;">Он заиграет в эфире после текущего трека.</div>
-      <div class="close-hint">👉 Можете закрыть эту вкладку</div>
+      <div style="font-size: 0.9em;">Возвращаемся в эфир...</div>
     </div>
+    
+    <!-- Кнопка ручного возврата, если авто не сработал -->
+    <a id="backLink" href="#" class="back-link">← Вернуться в плеер</a>
   </div>
 
   <script>
-    // 🔗 ВСТАВЬТЕ ВАШ WEB APP URL ИЗ GOOGLE APPS SCRIPT
+    // 🔗 ВАШ WEB APP URL ИЗ GOOGLE APPS SCRIPT
     const API_URL = 'https://script.google.com/macros/s/AKfycbzEiVCaFk_u5o7yjCa7v5_jLR8As3Gb8u8tuVGdvp8bzoURYiJDx3LuPs_QLAG8vk5acw/exec';
+    
+    // Определяем, куда возвращаться (из URL параметров)
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('return') || 'player'; // По умолчанию player
+    
+    // Формируем ссылку возврата
+    let finalReturnUrl = '';
+    if (returnUrl === 'player') {
+        // Замените на ваш реальный URL веб-приложения GAS
+        finalReturnUrl = 'https://script.google.com/macros/s/ВАШ_КОД/exec?page=player'; 
+    } else {
+        finalReturnUrl = decodeURIComponent(returnUrl);
+    }
+    
+    document.getElementById('backLink').href = finalReturnUrl;
 
     async function callApi(action, payload = {}) {
       try {
@@ -110,7 +114,12 @@
     var logoEl = document.getElementById('logo');
 
     // Загрузка логотипа
-    callApi('getLogoUrl').then(url => { if(url) logoEl.src = url; });
+    callApi('getLogoUrl').then(url => { 
+      if(url && url !== 'null') { 
+        logoEl.src = url; 
+        logoEl.style.display = 'block'; 
+      } 
+    });
 
     async function startRecording() {
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -142,7 +151,7 @@
         micBtn.classList.remove('recording');
         hintEl.textContent = 'Удерживайте кнопку для записи';
         if (err.name === 'NotAllowedError') {
-          showError('❌ Разрешите доступ к микрофону в настройках браузера');
+          showError('❌ Разрешите доступ к микрофону');
         } else {
           showError('❌ Ошибка: ' + err.message);
         }
@@ -169,14 +178,16 @@
           
           reader.onload = async function(e) {
             hintEl.textContent = '📤 Отправка...';
+            var base64Data = e.target.result.split(',')[1];
+            
             var result = await callApi('uploadRequest', {
-              base64: e.target.result.split(',')[1],
+              base64: base64Data,
               fileName: fileName,
               duration: recSeconds
             });
             
             if (result.success) {
-              showSuccess();
+              showSuccessAndRedirect();
             } else {
               showError('❌ Ошибка: ' + (result.error || 'Неизвестно'));
             }
@@ -191,12 +202,17 @@
       setTimeout(() => errorEl.textContent = '', 4000);
     }
 
-    function showSuccess() {
+    function showSuccessAndRedirect() {
       successBox.classList.add('show');
       micBtn.style.display = 'none';
       timerEl.style.display = 'none';
       hintEl.style.display = 'none';
       errorEl.style.display = 'none';
+      
+      // 🔥 АВТОМАТИЧЕСКИЙ ВОЗВРАТ ЧЕРЕЗ 2 СЕКУНДЫ
+      setTimeout(() => {
+        window.location.href = finalReturnUrl;
+      }, 2000);
     }
 
     micBtn.addEventListener('mousedown', startRecording);
