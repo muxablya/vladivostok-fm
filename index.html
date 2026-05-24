@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎙️ Записать привет — Vladivostok FM</title>
   <style>
-    /* Стили остались прежними */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { 
       font-family: system-ui, sans-serif; 
@@ -49,7 +48,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     
     .error { color: #dc3545; margin: 10px 0; font-size: 0.9em; min-height: 20px; }
-    .back-link { margin-top: 20px; display: inline-block; color: #1e3c72; text-decoration: none; font-weight: 600; border-bottom: 1px dashed #1e3c72; }
+    .close-hint { margin-top: 20px; font-size: 0.85em; color: #666; }
   </style>
 </head>
 <body>
@@ -66,31 +65,14 @@
     <div id="successBox" class="success-box">
       <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
       <div style="font-weight: 600; margin-bottom: 5px;">Привет отправлен!</div>
-      <div style="font-size: 0.9em;">Возвращаемся в эфир...</div>
+      <div style="font-size: 0.9em;">Окно закроется автоматически...</div>
+      <div class="close-hint">Если не закрылось, нажмите ❌ вверху вкладки</div>
     </div>
-    
-    <!-- Кнопка ручного возврата, если авто не сработал -->
-    <a id="backLink" href="#" class="back-link">← Вернуться в плеер</a>
   </div>
 
   <script>
     // 🔗 ВАШ WEB APP URL ИЗ GOOGLE APPS SCRIPT
     const API_URL = 'https://script.google.com/macros/s/AKfycbzEiVCaFk_u5o7yjCa7v5_jLR8As3Gb8u8tuVGdvp8bzoURYiJDx3LuPs_QLAG8vk5acw/exec';
-    
-    // Определяем, куда возвращаться (из URL параметров)
-    const urlParams = new URLSearchParams(window.location.search);
-    const returnUrl = urlParams.get('return') || 'player'; // По умолчанию player
-    
-    // Формируем ссылку возврата
-    let finalReturnUrl = '';
-    if (returnUrl === 'player') {
-        // Замените на ваш реальный URL веб-приложения GAS
-        finalReturnUrl = 'https://script.google.com/macros/s/AKfycbzEiVCaFk_u5o7yjCa7v5_jLR8As3Gb8u8tuVGdvp8bzoURYiJDx3LuPs_QLAG8vk5acw/exec?page=player'; 
-    } else {
-        finalReturnUrl = decodeURIComponent(returnUrl);
-    }
-    
-    document.getElementById('backLink').href = finalReturnUrl;
 
     async function callApi(action, payload = {}) {
       try {
@@ -151,7 +133,7 @@
         micBtn.classList.remove('recording');
         hintEl.textContent = 'Удерживайте кнопку для записи';
         if (err.name === 'NotAllowedError') {
-          showError('❌ Разрешите доступ к микрофону');
+          showError('❌ Разрешите доступ к микрофону в настройках браузера');
         } else {
           showError('❌ Ошибка: ' + err.message);
         }
@@ -187,7 +169,7 @@
             });
             
             if (result.success) {
-              showSuccessAndRedirect();
+              showSuccessAndClose();
             } else {
               showError('❌ Ошибка: ' + (result.error || 'Неизвестно'));
             }
@@ -202,16 +184,16 @@
       setTimeout(() => errorEl.textContent = '', 4000);
     }
 
-    function showSuccessAndRedirect() {
+    function showSuccessAndClose() {
       successBox.classList.add('show');
       micBtn.style.display = 'none';
       timerEl.style.display = 'none';
       hintEl.style.display = 'none';
       errorEl.style.display = 'none';
       
-      // 🔥 АВТОМАТИЧЕСКИЙ ВОЗВРАТ ЧЕРЕЗ 2 СЕКУНДЫ
+      // 🔥 ПЫТАЕМСЯ ЗАКРЫТЬ ОКНО ЧЕРЕЗ 2 СЕКУНДЫ
       setTimeout(() => {
-        window.location.href = finalReturnUrl;
+        window.close();
       }, 2000);
     }
 
