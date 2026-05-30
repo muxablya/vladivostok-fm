@@ -1,206 +1,313 @@
+<?php require_once 'config.php'; ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎙️ Записать привет — Vladivostok FM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Vladivostok FM</title>
+  
+  <!-- 🔥 PWA & МОБИЛЬНЫЕ МЕТА-ТЕГИ -->
+  <meta name="theme-color" content="#1e3c72">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-      font-family: system-ui, sans-serif; 
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
-      min-height: 100vh; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      padding: 20px;
-      color: white;
-    }
-    .container { 
-      background: #fff; 
-      border-radius: 20px; 
-      padding: 30px; 
-      max-width: 400px; 
-      width: 100%; 
-      text-align: center; 
-      color: #333;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    }
-    .logo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; background: #f0f0f0; display: none; }
-    h1 { font-size: 1.4em; margin-bottom: 5px; color: #1e3c72; }
-    .subtitle { color: #666; font-size: 0.95em; margin-bottom: 25px; }
+    body { font-family: system-ui, sans-serif; background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 5px; display: flex; align-items: flex-start; justify-content: center; min-height: 100vh; }
+    .player { background: #fff; border-radius: 16px; padding: 12px; width: 100%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 20px); max-height: 780px; position: relative; }
+    .header-row { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo-circle { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+    .station-title { font-size: 1.2em; font-weight: 700; color: #1e3c72; transition: opacity 0.1s; }
+    .live-badge { background: #dc3545; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 800; letter-spacing: 1px; box-shadow: 0 2px 5px rgba(220, 53, 69, 0.3); transition: 0.3s; cursor: pointer; user-select: none; }
+    .live-badge.offline { background: #ccc; box-shadow: none; }
+    .live-badge:hover { opacity: 0.85; }
+    audio { width: 100%; border-radius: 8px; flex-shrink: 0; height: 40px; }
+    #status { text-align: center; padding: 6px; border-radius: 8px; font-size: 0.8em; background: #e3f2fd; color: #1976d2; flex-shrink: 0; font-family: monospace; }
     
-    .mic-btn {
-      width: 120px; height: 120px; border-radius: 50%; border: none;
-      background: #dc3545; color: white; font-size: 2.5em; cursor: pointer;
-      margin: 20px auto; display: flex; align-items: center; justify-content: center;
-      transition: 0.2s; box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
-    }
-    .mic-btn:active { transform: scale(0.95); }
-    .mic-btn.recording { animation: pulse 1.5s infinite; background: #c82333; box-shadow: 0 4px 25px rgba(220, 53, 69, 0.7); }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+    ul { list-style: none; flex: 1; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 8px; margin: 0; }
+    li { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-bottom: 1px solid #f0f0f0; font-size: 0.85em; cursor: pointer; }
+    li:hover { background: #f8f9fa; }
+    li.active { background: #ffebee; border-left: 4px solid #e74c3c; font-weight: 600; color: #c0392b; }
+    .track-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 8px; }
+    .btn-save { background: #e0e0e0; border: none; border-radius: 4px; padding: 4px 6px; cursor: pointer; font-size: 1em; color: #333; transition: 0.2s; }
+    .btn-save:hover { background: #d0d0d0; transform: scale(1.1); }
     
-    .timer { font-size: 2.5em; font-weight: bold; color: #dc3545; margin: 10px 0; font-variant-numeric: tabular-nums; }
-    .hint { color: #888; font-size: 0.9em; margin: 15px 0; }
+    .actions-row { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-action { flex: 1; border: none; padding: 10px; border-radius: 12px; cursor: pointer; font-weight: 600; color: white; font-size: 0.95em; }
+    .btn-upload { background: #28a745; } .btn-call { background: #dc3545; }
     
-    .success-box { display: none; background: #d4edda; color: #155724; padding: 20px; border-radius: 12px; margin-top: 20px; border: 1px solid #c3e6cb; }
-    .success-box.show { display: block; animation: fadeIn 0.3s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    .error { color: #dc3545; margin: 10px 0; font-size: 0.9em; min-height: 20px; }
-    .close-hint { margin-top: 20px; font-size: 0.85em; color: #666; }
+    .form-box { display: none; margin-top: 6px; background: #f8f9fa; padding: 8px; border-radius: 8px; flex-shrink: 0; }
+    .form-input { width: 100%; margin-bottom: 6px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+    .btn-send { background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; }
+
+    #recorderModal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 100; flex-direction: column; align-items: center; justify-content: center; border-radius: 16px; backdrop-filter: blur(5px); }
+    #recorderModal.active { display: flex; }
+    .mic-big-btn { width: 90px; height: 90px; border-radius: 50%; border: none; background: #dc3545; color: white; font-size: 2.2em; cursor: pointer; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(220,53,69,0.4); display: flex; align-items: center; justify-content: center; }
+    .mic-big-btn.recording { animation: pulse 1.5s infinite; background: #c82333; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); } 70% { box-shadow: 0 0 0 20px rgba(220,53,69,0); } 100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); } }    .rec-timer { font-size: 2.5em; font-weight: bold; color: #333; margin-bottom: 10px; font-family: monospace; }
+    .rec-status { color: #666; font-size: 0.95em; margin-bottom: 20px; }
+    .close-rec { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5em; cursor: pointer; color: #999; }
+    .success-msg { color: #28a745; font-weight: bold; font-size: 1.2em; display: none; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img id="logo" class="logo" src="" alt="" referrerpolicy="no-referrer">
-    <h1>Vladivostok FM</h1>
-    <div class="subtitle">Запишите голосовое приветствие</div>
-    
-    <button id="micBtn" class="mic-btn">🎙️</button>
-    <div id="timer" class="timer">0:00</div>
-    <div id="hint" class="hint">Удерживайте кнопку для записи</div>
-    <div id="error" class="error"></div>
-    
-    <div id="successBox" class="success-box">
-      <div style="font-size: 2em; margin-bottom: 10px;">✅</div>
-      <div style="font-weight: 600; margin-bottom: 5px;">Привет отправлен!</div>
-      <div style="font-size: 0.9em;">Окно закроется автоматически...</div>
-      <div class="close-hint">Если не закрылось, нажмите ❌ вверху вкладки</div>
+  <div class="player">
+    <div class="header-row">
+      <div class="header-left">
+        <img id="logo" class="logo-circle" src="" alt="">
+        <div id="stationTitle" class="station-title">Vladivostok FM</div>
+      </div>
+      <div id="liveBadge" class="live-badge" onclick="goOnline()">LIVE</div>
+    </div>
+    <div id="status">📡 Подключение...</div>
+    <audio id="audio" controls preload="auto"></audio>
+    <audio id="staticPlayer" src="static.mp3" preload="auto"></audio>
+    <ul id="list"></ul>
+    <div class="actions-row">
+      <button class="btn-action btn-upload" onclick="toggleFileForm()"> Загрузить</button>
+      <button class="btn-action btn-call" onclick="openRecorder()">📞 Позвонить</button>
+    </div>
+    <div id="form-upload" class="form-box">
+      <input type="file" id="upFile" class="form-input" accept="audio/*">
+      <button class="btn-send" id="btnUp" onclick="sendFile()">Отправить</button>
+      <div id="msg-up" style="margin-top:4px; font-size:0.8em; text-align:center;"></div>
+    </div>
+    <div id="recorderModal">
+      <button class="close-rec" onclick="closeRecorder()"></button>
+      <div class="rec-timer" id="recTimer">0:00</div>
+      <button id="micBtnBig" class="mic-big-btn">📞</button>
+      <div class="rec-status" id="recStatus">Нажмите для звонка</div>
+      <div class="success-msg" id="successMsg">✅ Отправлено!</div>
     </div>
   </div>
 
   <script>
-    // 🔗 ВАШ WEB APP URL ИЗ GOOGLE APPS SCRIPT
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzEiVCaFk_u5o7yjCa7v5_jLR8As3Gb8u8tuVGdvp8bzoURYiJDx3LuPs_QLAG8vk5acw/exec';
+    const API_URL = window.location.protocol + '//' + window.location.hostname + '/api.php';
+    const BASE_TITLE = "Vladivostok FM";
+    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    
+    var schedule=[], promoMap={}, currentIdx=-1;
+    var audio=document.getElementById('audio'), statusEl=document.getElementById('status'), listEl=document.getElementById('list');
+    var stationTitleEl = document.getElementById('stationTitle'), liveBadge = document.getElementById('liveBadge');
+    var staticPlayer = document.getElementById('staticPlayer');
+    var lastVersion=0, syncTimer=null, lastTrackUrl=null, isBuffering=false, isOnlineSync = true;
+    var staticTimeout, scrambleInterval, musicTimer;
 
-    async function callApi(action, payload = {}) {
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action, ...payload })
+    var mediaRecorder, audioChunks=[], recInterval, recSeconds=0;    var micBtnBig = document.getElementById('micBtnBig'), recTimer = document.getElementById('recTimer');
+    var recStatus = document.getElementById('recStatus'), successMsg = document.getElementById('successMsg');
+    var recorderModal = document.getElementById('recorderModal');
+
+    async function callApi(action, payload) {
+      payload = payload || {};
+      var formData = new FormData(); formData.append('action', action);
+      for (var key in payload) formData.append(key, payload[key]);
+      try { return await (await fetch(API_URL, { method: 'POST', body: formData })).json(); } 
+      catch (e) { return { error: 'Connection failed' }; }
+    }
+
+    function startTuningEffect() {
+        staticPlayer.pause(); clearTimeout(staticTimeout); clearInterval(scrambleInterval);
+        var fileLen = 24, playMs = Math.floor(Math.random() * 3000) + 2000, playSec = playMs / 1000;
+        var maxStart = Math.max(0, fileLen - playSec), startSec = Math.random() * maxStart;
+        staticPlayer.currentTime = startSec; staticPlayer.play().catch(e => {});
+        scrambleInterval = setInterval(() => {
+            let arr = "Vladivostok".split('');
+            let ch = Math.random() > 0.5 ? 2 : 1;
+            for(let k=0; k<ch; k++) arr[Math.floor(Math.random()*10)+1] = CHARS[Math.floor(Math.random()*CHARS.length)];
+            stationTitleEl.textContent = arr.join('') + " FM";
+        }, 80);
+        staticTimeout = setTimeout(() => { staticPlayer.pause(); staticPlayer.currentTime=0; clearInterval(scrambleInterval); stationTitleEl.textContent=BASE_TITLE; }, playMs);
+        return playMs;
+    }
+
+    function updateLiveBadge() {
+      liveBadge.textContent = isOnlineSync ? 'LIVE' : 'MANUAL';
+      liveBadge.classList.toggle('offline', !isOnlineSync);
+    }
+
+    function goOnline() {
+      if (!isOnlineSync) {
+        isOnlineSync = true; updateLiveBadge(); audio.pause(); statusEl.textContent = ' Возврат в эфир...';
+        var d = startTuningEffect(); clearTimeout(musicTimer);
+        musicTimer = setTimeout(() => { hardSync(); }, d);
+      }
+    }
+
+    function switchTrack(idx, isManual) {
+      if (isBuffering || idx < 0 || idx >= schedule.length) return;
+      isBuffering = true; currentIdx = idx; lastTrackUrl = schedule[currentIdx].path; renderList();
+      audio.loop = false; audio.onended = handleTrackEnd;
+      clearTimeout(musicTimer); clearTimeout(staticTimeout); clearInterval(scrambleInterval);
+      var track = schedule[currentIdx], seekTime = 0;
+      if (isManual) {
+        audio.pause(); statusEl.textContent = ' Настройка частоты...';
+        var d = startTuningEffect();
+        audio.src = API_URL + '?action=streamProxy&path=' + encodeURIComponent(track.path);        audio.oncanplay = null;
+        musicTimer = setTimeout(() => {
+          if (seekTime > 0 && seekTime < 3600) audio.currentTime = seekTime;
+          audio.play().then(() => { isBuffering = false; setStatus('🎶 В эфире: ' + track.title, 'status-playing'); })
+                     .catch(() => { isBuffering = false; setStatus('⚠️ Play', 'status-error'); });
+        }, Math.max(0, d - 2000));
+      } else { setStatus(' Загрузка...'); loadAndPlay(track, seekTime); }
+    }
+
+    function loadAndPlay(track, seekTime) {
+      setStatus(' Подготовка: ' + track.title, 'status-loading');
+      playStream(API_URL + '?action=streamProxy&path=' + encodeURIComponent(track.path), track, seekTime);
+    }
+
+    function playStream(url, track, seekTime) {
+      if (track.path && track.path.indexOf('/band/') !== -1) {
+        callApi('getIntro').then(function(intro) {
+          if (intro && intro.path) {
+            var iUrl = API_URL + '?action=streamProxy&path=' + encodeURIComponent(intro.path);
+            audio.src = iUrl;
+            audio.oncanplay = function() {
+              audio.oncanplay = null; isBuffering = false;
+              setStatus('️ ' + (intro.title || 'Голос диджея'), 'status-playing');
+              audio.play();
+            };
+            audio.onended = function() { playTrackDirect(url, track, seekTime); };
+            audio.onerror = function() { playTrackDirect(url, track, seekTime); };
+          } else { playTrackDirect(url, track, seekTime); }
         });
-        return await response.json();
-      } catch (e) {
-        console.error('API Error:', e);
-        return { error: 'Connection failed' };
+      } else {
+        playTrackDirect(url, track, seekTime);
       }
     }
 
-    var mediaRecorder, audioChunks = [], recInterval, recSeconds = 0;
-    var micBtn = document.getElementById('micBtn');
-    var timerEl = document.getElementById('timer');
-    var hintEl = document.getElementById('hint');
-    var errorEl = document.getElementById('error');
-    var successBox = document.getElementById('successBox');
-    var logoEl = document.getElementById('logo');
-
-    // Загрузка логотипа
-    callApi('getLogoUrl').then(url => { 
-      if(url && url !== 'null') { 
-        logoEl.src = url; 
-        logoEl.style.display = 'block'; 
-      } 
-    });
-
-    async function startRecording() {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        showError('❌ Браузер не поддерживает запись');
-        return;
-      }
-      
-      try {
-        audioChunks = []; recSeconds = 0;
-        timerEl.textContent = '0:00';
-        micBtn.classList.add('recording');
-        hintEl.textContent = 'Отпустите, чтобы отправить';
-        errorEl.textContent = '';
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-        mediaRecorder.start();
-        
-        recInterval = setInterval(() => {
-          recSeconds++;
-          var m = Math.floor(recSeconds / 60);
-          var s = recSeconds % 60;
-          timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-          if (recSeconds >= 60) stopRecording();
-        }, 1000);
-        
-      } catch (err) {
-        micBtn.classList.remove('recording');
-        hintEl.textContent = 'Удерживайте кнопку для записи';
-        if (err.name === 'NotAllowedError') {
-          showError('❌ Разрешите доступ к микрофону в настройках браузера');
-        } else {
-          showError('❌ Ошибка: ' + err.message);
-        }
-      }
+    function playTrackDirect(url, track, seekTime) {
+      audio.src = url;
+      audio.loop = false;
+      audio.onended = handleTrackEnd;
+      audio.oncanplay = function() {
+        audio.oncanplay = null; isBuffering = false;
+        if (seekTime > 0 && seekTime < 3600) audio.currentTime = seekTime;
+        audio.play().then(() => setStatus('🎶 В эфире: ' + track.title, 'status-playing'))
+                     .catch(e => { isBuffering=false; setStatus(e.name==='NotAllowedError'?'👆 Кликните для запуска':'⚠️ Play','status-error'); });
+      };
+      audio.onerror = function() { isBuffering = false; setStatus('❌ Ошибка потока', 'status-error'); };
     }
 
-    function stopRecording() {
-      clearInterval(recInterval);
-      micBtn.classList.remove('recording');
-      hintEl.textContent = 'Удерживайте кнопку для записи';
-      
-      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
-        mediaRecorder.onstop = async () => {
-          if (mediaRecorder.stream) mediaRecorder.stream.getTracks().forEach(t => t.stop());
-          if (recSeconds < 1 || audioChunks.length === 0) {
-            showError('⚠️ Слишком короткая запись');
-            return;
-          }
-          
-          var blob = new Blob(audioChunks, { type: 'audio/webm' });
-          var fileName = 'voice_' + Date.now() + '.webm';
-          var reader = new FileReader();
-          
-          reader.onload = async function(e) {
-            hintEl.textContent = '📤 Отправка...';
-            var base64Data = e.target.result.split(',')[1];
-            
-            var result = await callApi('uploadRequest', {
-              base64: base64Data,
-              fileName: fileName,
-              duration: recSeconds
+    function handleTrackEnd() {
+      if (isBuffering) return;
+      if (!isOnlineSync) { switchTrack((currentIdx + 1) % schedule.length, false); return; }      var fIdx = currentIdx; currentIdx = (currentIdx + 1) % schedule.length; lastTrackUrl = schedule[currentIdx].path; renderList();
+      callApi('getNextRequest').then(req => {
+        if (req && req.path) playRequest(req.path, req.sender);
+        else { var pu = promoMap[String(fIdx)]; pu && pu.length > 5 ? playPromo(pu) : switchTrack(currentIdx, false); }
+      }).catch(() => switchTrack(currentIdx, false));
+    }
+    audio.onended = handleTrackEnd;
+
+    function playRequest(path, sender) {
+      setStatus('📞 Звонок: ' + sender, 'status-playing'); isBuffering = true; audio.loop = false;
+      audio.src = API_URL + '?action=streamProxy&path=' + encodeURIComponent(path);
+      audio.oncanplay = function() { audio.oncanplay=null; isBuffering=false; audio.play(); };
+      audio.onended = function() { callApi('deletePlayedRequest',{path}).then(handleTrackEnd); };
+      audio.onerror = function() { isBuffering=false; handleTrackEnd(); };
+    }
+    function playPromo(url) {
+      setStatus('📢 Реклама...', 'status-playing'); isBuffering = true; audio.loop = false;
+      audio.src = API_URL + '?action=streamProxy&path=' + encodeURIComponent(url);
+      audio.oncanplay = function() { audio.oncanplay=null; isBuffering=false; audio.play(); };
+      audio.onended = function() { switchTrack(currentIdx, false); };
+      audio.onerror = function() { isBuffering=false; switchTrack(currentIdx, false); };
+    }
+
+    function hardSync() {
+      if (isBuffering) return;
+      var now = new Date(), cs = (now.getHours()*3600+now.getMinutes()*60+now.getSeconds())%86400;
+      var found=null, idx=-1;
+      for(var i=0; i<schedule.length; i++) if(cs>=schedule[i].start_sec && cs<schedule[i].start_sec+schedule[i].duration_sec) { found=schedule[i]; idx=i; break; }
+      if(!found) { found=schedule[schedule.length-1]; idx=schedule.length-1; }
+      if(idx!==currentIdx || lastTrackUrl!==found.path) switchTrack(idx, false);
+    }
+    function softCheck() { callApi('getSchedule').then(r => { if(r.version!==lastVersion){schedule=r.schedule; lastVersion=r.version; hardSync();} }); }
+    
+    function renderList() {
+      listEl.innerHTML = '';
+      for(let i=0; i<schedule.length; i++) {
+        let t = schedule[i], li = document.createElement('li');
+        if(i===currentIdx) li.className='active';
+        li.onclick = function(e) { if(e.target.className!=='btn-save'){isOnlineSync=false; updateLiveBadge(); switchTrack(i,true);} };
+        let span = document.createElement('span'); span.className='track-title'; span.textContent=t.title;
+        let btn = document.createElement('button'); btn.className='btn-save'; btn.innerHTML='💾';
+        btn.onclick = function(e) { 
+            e.stopPropagation(); 
+            let a=document.createElement('a'); 
+            a.href=API_URL+'?action=streamProxy&download=1&path='+encodeURIComponent(t.path); 
+            a.download = 'download.mp3';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); 
+        };
+        li.appendChild(span); li.appendChild(btn); listEl.appendChild(li);
+      }      let al = listEl.querySelector('.active'); if(al) al.scrollIntoView({block:'center', behavior:'smooth'});
+    }
+    function toggleFileForm() { document.getElementById('form-upload').style.display = document.getElementById('form-upload').style.display==='block'?'none':'block'; }
+    function sendFile() {
+      var inp = document.getElementById('upFile'); if(!inp.files||!inp.files[0]) return alert('Выберите файл');
+      new FileReader().onload = function(e) {
+        callApi('uploadTrack',{base64:e.target.result.split(',')[1], fileName:inp.files[0].name}).then(r=>{alert(r.message||r.error||'Загружено!'); location.reload();});
+      }.bind(new FileReader()).readAsDataURL(inp.files[0]);
+    }
+    function openRecorder() { recorderModal.classList.add('active'); audio.pause(); recStatus.textContent='Нажмите для звонка'; successMsg.style.display='none'; micBtnBig.style.display='flex'; recTimer.style.display='block'; recStatus.style.display='block'; }
+    function closeRecorder() { recorderModal.classList.remove('active'); audio.play(); stopRecordingLogic(); }
+    function startRecordingLogic() {
+      if(!navigator.mediaDevices?.getUserMedia) { recStatus.textContent='❌ Нет доступа'; return; }
+      navigator.mediaDevices.getUserMedia({audio:true}).then(stream => {
+        audioChunks=[]; recSeconds=0; recTimer.textContent='0:00'; micBtnBig.classList.add('recording'); recStatus.textContent='Звонок...';
+        let mr = new MediaRecorder(stream); mr.ondataavailable = e => { if(e.data.size>0) audioChunks.push(e.data); }; mr.start();
+        recInterval = setInterval(() => { recSeconds++; recTimer.textContent=Math.floor(recSeconds/60)+':'+(recSeconds%60<10?'0':'')+recSeconds%60; if(recSeconds>=60) stopRecordingLogic(); }, 1000);
+        micBtnBig.stream = stream;
+      });
+    }
+    function stopRecordingLogic() {
+      clearInterval(recInterval); micBtnBig.classList.remove('recording');
+      if(mediaRecorder && mediaRecorder.state!=='inactive') {
+        mediaRecorder.stop(); mediaRecorder.onstop = function() {
+          if(micBtnBig.stream) micBtnBig.stream.getTracks().forEach(t=>t.stop());
+          if(recSeconds<1) { recStatus.textContent='️ Коротко'; return; }
+          let r = new FileReader(); r.onload = function(e) {
+            recStatus.textContent='📤 Отправка...';
+            callApi('uploadRequest',{base64:e.target.result.split(',')[1], fileName:'voice_'+Date.now()+'.webm', duration:recSeconds}).then(res => {
+              if(res.success) { recTimer.style.display='none'; micBtnBig.style.display='none'; recStatus.style.display='none'; successMsg.style.display='block'; setTimeout(closeRecorder,1500); }
+              else recStatus.textContent=' Ошибка';
             });
-            
-            if (result.success) {
-              showSuccessAndClose();
-            } else {
-              showError('❌ Ошибка: ' + (result.error || 'Неизвестно'));
-            }
-          };
-          reader.readAsDataURL(blob);
+          }; r.readAsDataURL(new Blob(audioChunks,{type:'audio/webm'}));
         };
       }
     }
+    micBtnBig.addEventListener('mousedown', startRecordingLogic);
+    micBtnBig.addEventListener('touchstart', e => { e.preventDefault(); startRecordingLogic(); }, {passive:false});
+    window.addEventListener('mouseup', () => { if(micBtnBig.classList.contains('recording')) stopRecordingLogic(); });
+    window.addEventListener('touchend', () => { if(micBtnBig.classList.contains('recording')) stopRecordingLogic(); });
 
-    function showError(msg) {
-      errorEl.textContent = msg;
-      setTimeout(() => errorEl.textContent = '', 4000);
+    function setStatus(t,c) { statusEl.textContent=t; statusEl.className=c; }
+    function startBackgroundCheck() { if(syncTimer) clearInterval(syncTimer); syncTimer=setInterval(softCheck,10000); }
+
+    window.onload = function() {
+      updateLiveBadge();
+      callApi('getLogoUrl').then(r => { if(r&&r.path){document.getElementById('logo').src=API_URL+'?action=streamProxy&path='+encodeURIComponent(r.path); document.getElementById('logo').style.display='block';} });
+      callApi('getSchedule').then(r => {
+        if(r.schedule&&r.schedule.length>0) {
+          schedule=r.schedule; lastVersion=r.version;          callApi('getPromoMap').then(m => { promoMap=m||{}; hardSync(); startBackgroundCheck(); }).catch(()=>{promoMap={}; hardSync(); startBackgroundCheck();});
+        } else setStatus('❌ Эфир пуст','status-error');
+      });
+    };
+
+    var autoStart = function() { if(audio.paused) audio.play().catch(()=>{}); document.removeEventListener('click',autoStart); document.removeEventListener('touchstart',autoStart); document.removeEventListener('keydown',autoStart); };
+    document.addEventListener('click', autoStart);
+    document.addEventListener('touchstart', autoStart);
+    document.addEventListener('keydown', autoStart);
+
+    // 🔥 РЕГИСТРАЦИЯ SERVICE WORKER (PWA)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
     }
-
-    function showSuccessAndClose() {
-      successBox.classList.add('show');
-      micBtn.style.display = 'none';
-      timerEl.style.display = 'none';
-      hintEl.style.display = 'none';
-      errorEl.style.display = 'none';
-      
-      // 🔥 ПЫТАЕМСЯ ЗАКРЫТЬ ОКНО ЧЕРЕЗ 2 СЕКУНДЫ
-      setTimeout(() => {
-        window.close();
-      }, 2000);
-    }
-
-    micBtn.addEventListener('mousedown', startRecording);
-    micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startRecording(); }, { passive: false });
-    window.addEventListener('mouseup', () => { if (micBtn.classList.contains('recording')) stopRecording(); });
-    window.addEventListener('touchend', () => { if (micBtn.classList.contains('recording')) stopRecording(); });
   </script>
 </body>
 </html>
